@@ -263,57 +263,57 @@ export function PropertyPilihanSlider({ properties }: PropertyPilihanSliderProps
             </div>
           </div>
 
-          {/* Navigation Buttons - Left */}
-           <Button
-             variant="ghost"
-             size="icon"
-             onClick={goToPrevious}
-             data-testid="button-previous"
-             style={{
-               position: 'absolute',
-               left: '16px',
-               top: '50%',
-               transform: 'translateY(-50%)',
-               zIndex: 20,
-               width: '48px',
-               height: '48px',
-               borderRadius: '50%',
-               backgroundColor: 'rgba(255, 255, 255, 0.95)',
-               border: '2px solid white',
-               display: 'flex',
-               alignItems: 'center',
-               justifyContent: 'center',
-               boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-             }}
-           >
-             <ChevronLeft style={{ width: '28px', height: '28px', color: '#2563eb' }} />
-           </Button>
+          {/* Navigation Arrows - Left Side */}
+          <div 
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30"
+            style={{ transform: 'translateY(-50%)' }}
+          >
+            <button
+              onClick={goToPrevious}
+              data-testid="button-previous"
+              aria-label="Previous property"
+              className="
+                w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14
+                rounded-full 
+                bg-white/90 hover:bg-white
+                border-2 border-blue-500 
+                flex items-center justify-center
+                shadow-lg hover:shadow-xl 
+                transition-all duration-300
+                hover:scale-110
+                cursor-pointer
+                group/arrow
+              "
+            >
+              <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-600 group-hover/arrow:text-blue-700" />
+            </button>
+          </div>
 
-           {/* Navigation Buttons - Right */}
-           <Button
-             variant="ghost"
-             size="icon"
-             onClick={goToNext}
-             data-testid="button-next"
-             style={{
-               position: 'absolute',
-               right: '16px',
-               top: '50%',
-               transform: 'translateY(-50%)',
-               zIndex: 20,
-               width: '48px',
-               height: '48px',
-               borderRadius: '50%',
-               backgroundColor: 'rgba(255, 255, 255, 0.95)',
-               border: '2px solid white',
-               display: 'flex',
-               alignItems: 'center',
-               justifyContent: 'center',
-               boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-             }}
-           >
-             <ChevronRight style={{ width: '28px', height: '28px', color: '#2563eb' }} />
-           </Button>
+          {/* Navigation Arrows - Right Side */}
+          <div 
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30"
+            style={{ transform: 'translateY(-50%)' }}
+          >
+            <button
+              onClick={goToNext}
+              data-testid="button-next"
+              aria-label="Next property"
+              className="
+                w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14
+                rounded-full 
+                bg-white/90 hover:bg-white
+                border-2 border-blue-500 
+                flex items-center justify-center
+                shadow-lg hover:shadow-xl 
+                transition-all duration-300
+                hover:scale-110
+                cursor-pointer
+                group/arrow
+              "
+            >
+              <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-600 group-hover/arrow:text-blue-700" />
+            </button>
+          </div>
 
           {/* Dots Navigation - More compact for mobile */}
            <div className="absolute bottom-2 sm:bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2 md:gap-3">
