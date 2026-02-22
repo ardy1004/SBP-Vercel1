@@ -263,7 +263,7 @@ export function PropertyPilihanSlider({ properties }: PropertyPilihanSliderProps
             </div>
           </div>
 
-          {/* Navigation Arrows - Left Side */}
+          {/* Navigation Arrows - Left Side - More Prominent */}
           <div 
             className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30"
             style={{ transform: 'translateY(-50%)' }}
@@ -273,23 +273,24 @@ export function PropertyPilihanSlider({ properties }: PropertyPilihanSliderProps
               data-testid="button-previous"
               aria-label="Previous property"
               className="
-                w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14
+                w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16
                 rounded-full 
-                bg-white/90 hover:bg-white
-                border-2 border-blue-500 
+                bg-white/95 hover:bg-white
+                border-2 border-blue-600 
                 flex items-center justify-center
-                shadow-lg hover:shadow-xl 
+                shadow-2xl hover:shadow-3xl 
                 transition-all duration-300
-                hover:scale-110
+                hover:scale-115
                 cursor-pointer
                 group/arrow
+                opacity-90 hover:opacity-100
               "
             >
-              <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-600 group-hover/arrow:text-blue-700" />
+              <ChevronLeft className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 text-blue-700 group-hover/arrow:text-blue-800" />
             </button>
           </div>
 
-          {/* Navigation Arrows - Right Side */}
+          {/* Navigation Arrows - Right Side - More Prominent */}
           <div 
             className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30"
             style={{ transform: 'translateY(-50%)' }}
@@ -299,19 +300,20 @@ export function PropertyPilihanSlider({ properties }: PropertyPilihanSliderProps
               data-testid="button-next"
               aria-label="Next property"
               className="
-                w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14
+                w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16
                 rounded-full 
-                bg-white/90 hover:bg-white
-                border-2 border-blue-500 
+                bg-white/95 hover:bg-white
+                border-2 border-blue-600 
                 flex items-center justify-center
-                shadow-lg hover:shadow-xl 
+                shadow-2xl hover:shadow-3xl 
                 transition-all duration-300
-                hover:scale-110
+                hover:scale-115
                 cursor-pointer
                 group/arrow
+                opacity-90 hover:opacity-100
               "
             >
-              <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 text-blue-600 group-hover/arrow:text-blue-700" />
+              <ChevronRight className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 text-blue-700 group-hover/arrow:text-blue-800" />
             </button>
           </div>
 
