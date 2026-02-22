@@ -104,24 +104,24 @@ export function ProductionPropertyForm({
   // Form state
   const [formData, setFormData] = useState({
     // Core fields
-    kode_listing: property?.kode_listing || "",
-    judul_properti: property?.judul_properti || "",
+    kode_listing: property?.kode_listing || property?.kodeListing || "",
+    judul_properti: property?.judul_properti || property?.judulProperti || "",
     deskripsi: property?.deskripsi || "",
-    harga_properti: property?.harga_properti || "",
-    harga_per_meter: property?.harga_per_meter || false,
-    price_old: property?.price_old || "",
-    luas_tanah: property?.luas_tanah || "",
-    luas_bangunan: property?.luas_bangunan || "",
-    kamar_tidur: property?.kamar_tidur || "",
-    kamar_mandi: property?.kamar_mandi || "",
-    jenis_properti: property?.jenis_properti || "",
+    harga_properti: property?.harga_properti || property?.hargaProperti || "",
+    harga_per_meter: property?.harga_per_meter || property?.hargaPerMeter || false,
+    price_old: property?.price_old || property?.priceOld || "",
+    luas_tanah: property?.luas_tanah || property?.luasTanah || "",
+    luas_bangunan: property?.luas_bangunan || property?.luasBangunan || "",
+    kamar_tidur: property?.kamar_tidur || property?.kamarTidur || "",
+    kamar_mandi: property?.kamar_mandi || property?.kamarMandi || "",
+    jenis_properti: property?.jenis_properti || property?.jenisProperti || "",
     legalitas: property?.legalitas || "",
     shgb_expired_at: property?.shgb_expired_at || "",
-    provinsi: property?.provinsi || "",
+    provinsi: property?.provinsi || property?.Provinsi || "",
     kabupaten: property?.kabupaten || "",
     kecamatan: property?.kecamatan || "",
     kelurahan: property?.kelurahan || "",
-    alamat_lengkap: property?.alamat_lengkap || "",
+    alamat_lengkap: property?.alamat_lengkap || property?.alamatLengkap || "",
     
     // Images
     image_url: property?.image_url || "",
@@ -207,6 +207,105 @@ export function ProductionPropertyForm({
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
+
+  // Update form when property prop changes (e.g., when editing different property)
+  useEffect(() => {
+    if (property?.id) {
+      setFormData({
+        // Core fields
+        kode_listing: property?.kode_listing || property?.kodeListing || "",
+        judul_properti: property?.judul_properti || property?.judulProperti || "",
+        deskripsi: property?.deskripsi || "",
+        harga_properti: property?.harga_properti || property?.hargaProperti || "",
+        harga_per_meter: property?.harga_per_meter || property?.hargaPerMeter || false,
+        price_old: property?.price_old || property?.priceOld || "",
+        luas_tanah: property?.luas_tanah || property?.luasTanah || "",
+        luas_bangunan: property?.luas_bangunan || property?.luasBangunan || "",
+        kamar_tidur: property?.kamar_tidur || property?.kamarTidur || "",
+        kamar_mandi: property?.kamar_mandi || property?.kamarMandi || "",
+        jenis_properti: property?.jenis_properti || property?.jenisProperti || "",
+        legalitas: property?.legalitas || "",
+        shgb_expired_at: property?.shgb_expired_at || property?.shgbExpiredAt || "",
+        provinsi: property?.provinsi || property?.Provinsi || "",
+        kabupaten: property?.kabupaten || "",
+        kecamatan: property?.kecamatan || "",
+        kelurahan: property?.kelurahan || "",
+        alamat_lengkap: property?.alamat_lengkap || property?.alamatLengkap || "",
+        
+        // Images
+        image_url: property?.image_url || property?.imageUrl || "",
+        image_url1: property?.image_url1 || property?.imageUrl1 || "",
+        image_url2: property?.image_url2 || property?.imageUrl2 || "",
+        image_url3: property?.image_url3 || property?.imageUrl3 || "",
+        image_url4: property?.image_url4 || property?.imageUrl4 || "",
+        image_url5: property?.image_url5 || property?.imageUrl5 || "",
+        image_url6: property?.image_url6 || property?.imageUrl6 || "",
+        image_url7: property?.image_url7 || property?.imageUrl7 || "",
+        image_url8: property?.image_url8 || property?.imageUrl8 || "",
+        image_url9: property?.image_url9 || property?.imageUrl9 || "",
+        youtube_url: property?.youtube_url || "",
+        
+        // Status
+        status_dijual: property?.status === "dijual" || property?.status === "dijual_disewakan" || false,
+        status_disewakan: property?.status === "disewakan" || property?.status === "dijual_disewakan" || false,
+        
+        // Owner Contact
+        owner_contact: property?.owner_contact || property?.ownerContact || "",
+        
+        // Labels
+        is_hot: property?.is_hot || false,
+        is_sold: property?.is_sold || false,
+        is_property_pilihan: property?.is_property_pilihan || false,
+        is_premium: property?.is_premium || false,
+        is_featured: property?.is_featured || false,
+        
+        // Meta
+        meta_title: property?.meta_title || "",
+        meta_description: property?.meta_description || "",
+        
+        // Extension fields
+        kelengkapan: property?.kelengkapan || "",
+        status_legalitas: property?.status_legalitas || "On Hand",
+        lebar_depan: property?.lebar_depan || "",
+        jumlah_lantai: property?.jumlah_lantai || "",
+        jenis_kost: property?.jenis_kost || "",
+        jenis_hotel: property?.jenis_hotel || "",
+        ruang_penjaga: property?.ruang_penjaga || false,
+        token_listrik_perkamar: property?.token_listrik_perkamar || false,
+        no_unit: property?.no_unit || "",
+        bank_terkait: property?.bank_terkait || "",
+        outstanding_bank: property?.outstanding_bank || "",
+        dekat_sungai: property?.dekat_sungai || false,
+        jarak_sungai: property?.jarak_sungai || "",
+        dekat_makam: property?.dekat_makam || false,
+        jarak_makam: property?.jarak_makam || "",
+        dekat_sutet: property?.dekat_sutet || false,
+        jarak_sutet: property?.jarak_sutet || "",
+        lebar_jalan: property?.lebar_jalan || "",
+        alasan_dijual: property?.alasan_dijual || "",
+        
+        // Price variants
+        harga_sewa_tahunan: property?.harga_sewa_tahunan || "",
+        harga_nego: property?.harga_nego !== false,
+        harga_nett: property?.harga_nett || false,
+        
+        // Income/Operational
+        income_per_bulan: property?.income_per_bulan || "",
+        biaya_pengeluaran_per_bulan: property?.biaya_pengeluaran_per_bulan || "",
+        harga_sewa_kamar: property?.harga_sewa_kamar || "",
+        
+        // Google Maps
+        google_maps_link: property?.google_maps_link || "",
+        
+        // Source tracking
+        source_input: property?.source_input || sourceInput,
+        publish_status: property?.publish_status || (sourceInput === 'OWNER' ? 'PENDING_REVIEW' : 'APPROVED'),
+        
+        // Agreement
+        agreement_status: property?.agreement_status || "none",
+      });
+    }
+  }, [property?.id]);
 
   // Resize canvas to match CSS size - 1:1 mapping for accurate coordinate tracking
   const resizeCanvas = useCallback(() => {
@@ -700,8 +799,11 @@ export function ProductionPropertyForm({
         kamar_mandi: formData.kamar_mandi ? parseInt(formData.kamar_mandi) : null,
         jenis_properti: formData.jenis_properti,
         legalitas: formData.legalitas || null,
+        // Note: shgb_expired_at removed - column doesn't exist in database
         provinsi: formData.provinsi || null,
         kabupaten: formData.kabupaten || null,
+        kecamatan: formData.kecamatan || null,
+        kelurahan: formData.kelurahan || null,
         alamat_lengkap: formData.alamat_lengkap || null,
         
         // Images
@@ -710,6 +812,12 @@ export function ProductionPropertyForm({
         image_url2: formData.image_url2 || null,
         image_url3: formData.image_url3 || null,
         image_url4: formData.image_url4 || null,
+        image_url5: formData.image_url5 || null,
+        image_url6: formData.image_url6 || null,
+        image_url7: formData.image_url7 || null,
+        image_url8: formData.image_url8 || null,
+        image_url9: formData.image_url9 || null,
+        youtube_url: formData.youtube_url || null,
         
         // Status
         status: status,
@@ -723,6 +831,22 @@ export function ProductionPropertyForm({
         
         // Owner Contact
         owner_contact: formData.owner_contact || null,
+        
+        // Extension fields
+        kelengkapan: formData.kelengkapan || null,
+        status_legalitas: formData.status_legalitas || 'On Hand',
+        jenis_kost: formData.jenis_kost || null,
+        jumlah_lantai: formData.jumlah_lantai ? parseInt(formData.jumlah_lantai) : null,
+        lebar_depan: formData.lebar_depan ? parseFloat(formData.lebar_depan) : null,
+        no_unit: formData.no_unit || null,
+        bank_terkait: formData.bank_terkait || null,
+        outstanding_bank: formData.outstanding_bank ? parseCurrency(formData.outstanding_bank) : null,
+        google_maps_link: formData.google_maps_link || null,
+        harga_sewa_tahunan: formData.harga_sewa_tahunan ? parseCurrency(formData.harga_sewa_tahunan) : null,
+        harga_sewa_kamar: formData.harga_sewa_kamar ? parseCurrency(formData.harga_sewa_kamar) : null,
+        income_per_bulan: formData.income_per_bulan ? parseCurrency(formData.income_per_bulan) : null,
+        biaya_pengeluaran_per_bulan: formData.biaya_pengeluaran_per_bulan ? parseCurrency(formData.biaya_pengeluaran_per_bulan) : null,
+        alasan_dijual: formData.alasan_dijual || null,
       };
 
       let result;
@@ -1068,7 +1192,6 @@ export function ProductionPropertyForm({
                 value={type.value}
                 checked={formData.jenis_properti === type.value}
                 onChange={(e) => {
-                  console.log('[DEBUG] Radio change:', e.target.value);
                   handleChange("jenis_properti", e.target.value);
                 }}
                 className="h-5 w-5 text-primary accent-primary cursor-pointer relative z-10"
@@ -1381,6 +1504,53 @@ export function ProductionPropertyForm({
             rows={2} 
             placeholder="Mengapa properti ini dijual..." 
           />
+        </div>
+        
+        {/* LABELS - Checkbox options */}
+        <div className="border-t pt-6 space-y-4">
+          <h3 className="font-semibold">Label Properti</h3>
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="is_premium" 
+                checked={formData.is_premium} 
+                onCheckedChange={(c) => handleChange("is_premium", c)} 
+              />
+              <Label htmlFor="is_premium" className="cursor-pointer font-medium">Premium</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="is_featured" 
+                checked={formData.is_featured} 
+                onCheckedChange={(c) => handleChange("is_featured", c)} 
+              />
+              <Label htmlFor="is_featured" className="cursor-pointer font-medium">Featured</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="is_hot" 
+                checked={formData.is_hot} 
+                onCheckedChange={(c) => handleChange("is_hot", c)} 
+              />
+              <Label htmlFor="is_hot" className="cursor-pointer font-medium">Hot</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="is_sold" 
+                checked={formData.is_sold} 
+                onCheckedChange={(c) => handleChange("is_sold", c)} 
+              />
+              <Label htmlFor="is_sold" className="cursor-pointer font-medium text-red-600">SOLD</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="is_property_pilihan" 
+                checked={formData.is_property_pilihan} 
+                onCheckedChange={(c) => handleChange("is_property_pilihan", c)} 
+              />
+              <Label htmlFor="is_property_pilihan" className="cursor-pointer font-medium">Properti Pilihan</Label>
+            </div>
+          </div>
         </div>
         
         {/* Image Upload with Auto WebP Conversion */}

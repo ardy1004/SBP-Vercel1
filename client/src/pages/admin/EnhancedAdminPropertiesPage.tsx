@@ -72,7 +72,7 @@ export default function EnhancedAdminPropertiesPage() {
   const [match, params] = useRoute("/admin/properties/:tab?");
   const [, setLocation] = useLocation();
 
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkMode, setIsBulkMode] = useState(false);
@@ -99,6 +99,7 @@ export default function EnhancedAdminPropertiesPage() {
 
   const { data: rawProperties = [], isLoading } = useQuery<any[]>({
     queryKey: ['admin-properties'],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
     queryFn: async () => {
       const { data, error } = await supabase
         .from('properties')
@@ -110,7 +111,6 @@ export default function EnhancedAdminPropertiesPage() {
         throw error;
       }
 
-      console.log('Raw properties from Supabase:', data?.slice(0, 3));
       return data || [];
     },
   });
@@ -118,9 +118,12 @@ export default function EnhancedAdminPropertiesPage() {
   // Transform Supabase snake_case to camelCase for admin panel
   const properties = rawProperties.map((property: any) => ({
     id: property.id,
+    kode_listing: property.kode_listing,
     kodeListing: property.kode_listing,
+    judul_properti: property.judul_properti,
     judulProperti: property.judul_properti,
     deskripsi: property.deskripsi,
+    jenis_properti: property.jenis_properti,
     jenisProperti: property.jenis_properti,
     luasTanah: property.luas_tanah,
     luasBangunan: property.luas_bangunan,
@@ -128,9 +131,45 @@ export default function EnhancedAdminPropertiesPage() {
     kamarMandi: property.kamar_mandi,
     legalitas: property.legalitas,
     hargaProperti: property.harga_properti,
+    harga_properti: property.harga_properti,
+    harga_per_meter: Boolean((property as any).harga_per_meter || false),
+    priceOld: property.price_old,
+    price_old: property.price_old,
+    Provinsi: property.provinsi,
     provinsi: property.provinsi,
     kabupaten: property.kabupaten,
+    kecamatan: property.kecamatan,
+    kelurahan: property.kelurahan,
+    alamat_lengkap: property.alamat_lengkap,
     alamatLengkap: property.alamat_lengkap,
+    
+    // Extension fields
+    kelengkapan: property.kelengkapan,
+    status_legalitas: property.status_legalitas,
+    shgb_expired_at: property.shgb_expired_at,
+    lebar_depan: property.lebar_depan,
+    jumlah_lantai: property.jumlah_lantai,
+    jenis_kost: property.jenis_kost,
+    jenis_hotel: property.jenis_hotel,
+    ruang_penjaga: property.ruang_penjaga,
+    token_listrik_perkamar: property.token_listrik_perkamar,
+    no_unit: property.no_unit,
+    bank_terkait: property.bank_terkait,
+    outstanding_bank: property.outstanding_bank,
+    dekat_sungai: property.dekat_sungai,
+    jarak_sungai: property.jarak_sungai,
+    dekat_makam: property.dekat_makam,
+    jarak_makam: property.jarak_makam,
+    dekat_sutet: property.dekat_sutet,
+    jarak_sutet: property.jarak_sutet,
+    lebar_jalan: property.lebar_jalan,
+    alasan_dijual: property.alasan_dijual,
+    harga_sewa_tahunan: property.harga_sewa_tahunan,
+    harga_sewa_kamar: property.harga_sewa_kamar,
+    income_per_bulan: property.income_per_bulan,
+    biaya_pengeluaran_per_bulan: property.biaya_pengeluaran_per_bulan,
+    google_maps_link: property.google_maps_link,
+    
     imageUrl: property.image_url,
     imageUrl1: property.image_url1,
     imageUrl2: property.image_url2,
@@ -145,10 +184,9 @@ export default function EnhancedAdminPropertiesPage() {
     isFeatured: property.is_featured,
     isHot: property.is_hot,
     isSold: property.is_sold,
-    priceOld: property.price_old,
     isPropertyPilihan: property.is_property_pilihan,
-    hargaPerMeter: Boolean((property as any).harga_per_meter || false),
     ownerContact: property.owner_contact,
+    owner_contact: property.owner_contact,
     status: property.status,
     metaTitle: property.meta_title,
     metaDescription: property.meta_description,
