@@ -1079,6 +1079,17 @@ export function ProductionPropertyForm({
         </div>
       </div>
 
+      {/* JUDUL PROPERTI */}
+      <div className="space-y-2">
+        <Label className="text-base font-semibold">Judul Properti</Label>
+        <Input
+          value={formData.judul_properti}
+          onChange={(e) => handleChange("judul_properti", e.target.value)}
+          placeholder="Contoh: Rumah Mewah Full Furnished di Jl. Kaliurang"
+        />
+        <p className="text-xs text-gray-500">Judul akan ditampilkan di listing dan membantu user menemukan properti Anda</p>
+      </div>
+
       {/* TUJUAN TRANSAKSI - Updated: Checkbox for multiple selection */}
       <div className="space-y-2">
         <Label className="text-base font-semibold">Tujuan Transaksi</Label>

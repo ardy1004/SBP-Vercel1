@@ -91,33 +91,51 @@ export function parsePropertySlug(slug: string): {
   const parts = slug.split('-');
 
   // Try to identify kode_listing (more flexible patterns: K2.60, R1.25, A123, etc)
+  // Also handle SBP-XXXXXX-XXXX format
   let kodeListingIndex = -1;
-  for (let i = parts.length - 1; i >= 0; i--) {
-    const part = parts[i].toUpperCase();
-    // More flexible regex to match various kode_listing patterns
-    if (/^[A-Z]+\d+[\.\d]*$/.test(part) || /^\d+[A-Z]+\d*$/.test(part)) {
-      kodeListingIndex = i;
-      break;
+  let kode_listing = '';
+  
+  // First, try to find SBP-XXXXXX-XXXX pattern at the end (full kode listing with prefix)
+  const slugLower = slug.toLowerCase();
+  const sbpMatch = slugLower.match(/sbp-[a-z0-9]+-[a-z0-9]+$/i);
+  
+  if (sbpMatch) {
+    // Found SBP-XXXXXX-XXXX format, extract the full kode listing
+    kode_listing = sbpMatch[0].toUpperCase();
+    // Find the starting index of this pattern in the slug
+    kodeListingIndex = parts.findIndex((part, idx) => {
+      const remainingParts = parts.slice(idx).join('-').toLowerCase();
+      return remainingParts.startsWith('sbp-');
+    });
+  } else {
+    // Original logic for other kode_listing patterns
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const part = parts[i].toUpperCase();
+      // More flexible regex to match various kode_listing patterns
+      if (/^[A-Z]+\d+[\.\d]*$/.test(part) || /^\d+[A-Z]+\d*$/.test(part)) {
+        kodeListingIndex = i;
+        break;
+      }
     }
+    
+    if (kodeListingIndex === -1) {
+      // Fallback: assume last part is kode_listing
+      kodeListingIndex = parts.length - 1;
+    }
+    
+    kode_listing = parts[kodeListingIndex]?.toUpperCase();
   }
-
-  if (kodeListingIndex === -1) {
-    // Fallback: assume last part is kode_listing
-    kodeListingIndex = parts.length - 1;
-  }
-
-  const kode_listing = parts[kodeListingIndex]?.toUpperCase();
 
   // Extract other parts based on position
-  const status = parts[0];
-  const jenis_properti = parts[1];
+  const status = parts[0] || '';
+  const jenis_properti = parts[1] || '';
 
   // Reconstruct location parts (provinsi-kabupaten might be combined)
   let provinsi = '';
   let kabupaten = '';
   let judulStartIndex = 2;
 
-  if (parts.length > kodeListingIndex) {
+  if (kodeListingIndex > 2) {
     // Try to identify location parts
     const locationParts = parts.slice(2, kodeListingIndex);
 
@@ -125,8 +143,8 @@ export function parsePropertySlug(slug: string): {
     const provinces = ['diyogyakarta', 'jakarta', 'jabar', 'jateng', 'jatim', 'bali', 'sumatera', 'sulawesi', 'kalimantan', 'papua', 'banten', 'lampung', 'riau', 'jambi'];
 
     for (let i = 0; i < locationParts.length; i++) {
-      if (provinces.some(p => locationParts[i].includes(p))) {
-        provinsi = locationParts[i];
+      if (locationParts[i] && provinces.some(p => locationParts[i]!.includes(p))) {
+        provinsi = locationParts[i] || '';
         kabupaten = locationParts[i + 1] || '';
         judulStartIndex = 2 + i + (kabupaten ? 1 : 0) + 1;
         break;
@@ -135,17 +153,17 @@ export function parsePropertySlug(slug: string): {
 
     // If no province found, assume first two are location
     if (!provinsi && locationParts.length >= 2) {
-      provinsi = locationParts[0];
-      kabupaten = locationParts[1];
+      provinsi = locationParts[0] || '';
+      kabupaten = locationParts[1] || '';
       judulStartIndex = 4;
     } else if (!provinsi && locationParts.length === 1) {
-      provinsi = locationParts[0];
+      provinsi = locationParts[0] || '';
       judulStartIndex = 3;
     }
   }
 
   // Reconstruct title from remaining parts
-  const titleParts = parts.slice(judulStartIndex, kodeListingIndex);
+  const titleParts = parts.slice(Math.max(judulStartIndex, 2), kodeListingIndex > 0 ? kodeListingIndex : parts.length);
   const judul_properti = titleParts.join(' ').replace(/-/g, ' ');
 
   return {
