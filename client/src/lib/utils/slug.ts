@@ -16,6 +16,14 @@ export function generatePropertySlug(property: {
       .trim();
   };
 
+  // Get the display status for URL (convert 'dijual_disewakan' to 'dijual-dan-disewakan')
+  const getUrlStatus = (status?: string) => {
+    if (!status || status === 'dijual') return 'dijual';
+    if (status === 'disewakan') return 'disewakan';
+    if (status === 'dijual_disewakan') return 'dijual-dan-disewakan';
+    return 'dijual';
+  };
+
   // Extract key words from title (first 3-4 meaningful words)
   const extractKeyWords = (title: string): string => {
     if (!title) return '';
@@ -32,7 +40,7 @@ export function generatePropertySlug(property: {
   };
 
   const parts = [
-    property.status || 'dijual', // Status (dijual/disewakan)
+    getUrlStatus(property.status), // Status (dijual/disewakan/dijual-dan-disewakan)
     property.jenis_properti || 'properti', // Property type (kost, rumah, etc)
     cleanProvince(property.provinsi || ''), // Province (yogyakarta, jakarta, etc)
     property.kabupaten?.toLowerCase() || '', // Regency/City
@@ -72,6 +80,14 @@ export function parsePropertySlug(slug: string): {
   judul_properti?: string;
   kode_listing?: string;
 } {
+  // Convert URL-friendly status back to database status
+  const convertUrlStatusToDb = (urlStatus: string): string => {
+    if (urlStatus === 'dijual') return 'dijual';
+    if (urlStatus === 'disewakan') return 'disewakan';
+    if (urlStatus === 'dijual-dan-disewakan') return 'dijual_disewakan';
+    return urlStatus;
+  };
+
   const parts = slug.split('-');
 
   // Try to identify kode_listing (more flexible patterns: K2.60, R1.25, A123, etc)
@@ -133,7 +149,7 @@ export function parsePropertySlug(slug: string): {
   const judul_properti = titleParts.join(' ').replace(/-/g, ' ');
 
   return {
-    status,
+    status: convertUrlStatusToDb(status),
     jenis_properti,
     provinsi,
     kabupaten,

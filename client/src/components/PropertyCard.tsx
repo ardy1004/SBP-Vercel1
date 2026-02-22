@@ -119,7 +119,17 @@ const PropertyCardComponent = ({ property, onToggleFavorite, isFavorite }: Prope
 
   const getStatusColor = (status: string) => {
     if (!status) return 'bg-gray-500';
-    return status === 'dijual' ? 'bg-emerald-500' : 'bg-blue-500';
+    if (status === 'dijual') return 'bg-emerald-500';
+    if (status === 'disewakan') return 'bg-blue-500';
+    if (status === 'dijual_disewakan') return 'bg-gradient-to-r from-emerald-500 to-blue-500';
+    return 'bg-gray-500';
+  };
+
+  const getStatusLabel = (status: string) => {
+    if (!status || status === 'dijual') return 'DIJUAL';
+    if (status === 'disewakan') return 'DISEWAKAN';
+    if (status === 'dijual_disewakan') return 'DIJUAL & DISEWAKAN';
+    return 'DIJUAL';
   };
 
   const getLabel = () => {
@@ -245,7 +255,7 @@ const PropertyCardComponent = ({ property, onToggleFavorite, isFavorite }: Prope
                   shadow-lg backdrop-blur-sm
                 `}
               >
-                {(property.status || 'dijual') === 'dijual' ? 'DIJUAL' : 'DISEWAKAN'}
+                {getStatusLabel(property.status)}
               </Badge>
             </div>
           )}
