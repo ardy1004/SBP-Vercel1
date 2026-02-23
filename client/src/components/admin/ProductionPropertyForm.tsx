@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { MultiImageDropzone } from "@/components/MultiImageDropzone";
+import html2canvas from "html2canvas";
 import { 
   Home, 
   MapPin, 
@@ -203,7 +204,10 @@ export function ProductionPropertyForm({
   const [showAgreementPreview, setShowAgreementPreview] = useState(false);
   const [agreementAccepted, setAgreementAccepted] = useState(false);
   const [ownerSignature, setOwnerSignature] = useState<string>('');
+  const [savedAgreementUrl, setSavedAgreementUrl] = useState<string>('');
+  const [isCapturing, setIsCapturing] = useState(false);
   const signatureCanvasRef = useRef<HTMLCanvasElement>(null);
+  const agreementPreviewRef = useRef<HTMLDivElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
   const { toast } = useToast();
@@ -568,6 +572,129 @@ export function ProductionPropertyForm({
       description: "Membuka dialog cetak. Pilih 'Simpan sebagai PDF' untuk menyimpan.",
       duration: 3000
     });
+  };
+
+  // Capture agreement preview as WebP image
+  const captureAgreementPreview = async () => {
+    if (!agreementPreviewRef.current) {
+      toast({
+        title: "Error",
+        description: "Tidak dapat mengambil preview",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!ownerSignature) {
+      toast({
+        title: "Error",
+        description: "Silakan tanda tangan terlebih dahulu",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCapturing(true);
+    try {
+      const canvas = await html2canvas(agreementPreviewRef.current, {
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      // Convert to WebP
+      const webpDataUrl = canvas.toDataURL('image/webp', 0.8);
+      
+      // Convert base64 to blob for upload
+      const base64Data = webpDataUrl.split(',')[1];
+      if (!base64Data) throw new Error('Failed to convert image');
+      
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/webp' });
+
+      // Upload to Supabase Storage
+      const fileName = `agreement_${formData.kode_listing || 'preview'}_${Date.now()}.webp`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('agreements')
+        .upload(fileName, blob, {
+          contentType: 'image/webp',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('agreements')
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl;
+      setSavedAgreementUrl(publicUrl);
+
+      toast({
+        title: "Berhasil",
+        description: "Preview perjanjian berhasil disimpan sebagai WebP",
+        duration: 3000
+      });
+
+      return publicUrl;
+    } catch (error: any) {
+      console.error('Error capturing agreement:', error);
+      toast({
+        title: "Error",
+        description: error?.message || "Gagal menyimpan preview perjanjian",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
+  // Download agreement as image
+  const downloadAgreementImage = async (format: 'webp' | 'png' = 'webp') => {
+    if (!agreementPreviewRef.current) return;
+
+    setIsCapturing(true);
+    try {
+      const canvas = await html2canvas(agreementPreviewRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const mimeType = format === 'webp' ? 'image/webp' : 'image/png';
+      const dataUrl = canvas.toDataURL(mimeType, 0.9);
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `perjanjian_${formData.kode_listing || 'preview'}.${format}`;
+      link.href = dataUrl;
+      link.click();
+
+      toast({
+        title: "Berhasil",
+        description: `Preview berhasil diunduh sebagai ${format.toUpperCase()}`,
+        duration: 3000
+      });
+    } catch (error: any) {
+      console.error('Error downloading agreement:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengunduh preview",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   // Auto-generate kode listing on mount if not editing
@@ -1506,52 +1633,54 @@ export function ProductionPropertyForm({
           />
         </div>
         
-        {/* LABELS - Checkbox options */}
-        <div className="border-t pt-6 space-y-4">
-          <h3 className="font-semibold">Label Properti</h3>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <Checkbox 
-                id="is_premium" 
-                checked={formData.is_premium} 
-                onCheckedChange={(c) => handleChange("is_premium", c)} 
-              />
-              <Label htmlFor="is_premium" className="cursor-pointer font-medium">Premium</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox 
-                id="is_featured" 
-                checked={formData.is_featured} 
-                onCheckedChange={(c) => handleChange("is_featured", c)} 
-              />
-              <Label htmlFor="is_featured" className="cursor-pointer font-medium">Featured</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox 
-                id="is_hot" 
-                checked={formData.is_hot} 
-                onCheckedChange={(c) => handleChange("is_hot", c)} 
-              />
-              <Label htmlFor="is_hot" className="cursor-pointer font-medium">Hot</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox 
-                id="is_sold" 
-                checked={formData.is_sold} 
-                onCheckedChange={(c) => handleChange("is_sold", c)} 
-              />
-              <Label htmlFor="is_sold" className="cursor-pointer font-medium text-red-600">SOLD</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox 
-                id="is_property_pilihan" 
-                checked={formData.is_property_pilihan} 
-                onCheckedChange={(c) => handleChange("is_property_pilihan", c)} 
-              />
-              <Label htmlFor="is_property_pilihan" className="cursor-pointer font-medium">Properti Pilihan</Label>
+        {/* LABELS - Checkbox options - ADMIN ONLY */}
+        {sourceInput === 'ADMIN' && (
+          <div className="border-t pt-6 space-y-4">
+            <h3 className="font-semibold">Label Properti</h3>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="is_premium" 
+                  checked={formData.is_premium} 
+                  onCheckedChange={(c) => handleChange("is_premium", c)} 
+                />
+                <Label htmlFor="is_premium" className="cursor-pointer font-medium">Premium</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="is_featured" 
+                  checked={formData.is_featured} 
+                  onCheckedChange={(c) => handleChange("is_featured", c)} 
+                />
+                <Label htmlFor="is_featured" className="cursor-pointer font-medium">Featured</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="is_hot" 
+                  checked={formData.is_hot} 
+                  onCheckedChange={(c) => handleChange("is_hot", c)} 
+                />
+                <Label htmlFor="is_hot" className="cursor-pointer font-medium">Hot</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="is_sold" 
+                  checked={formData.is_sold} 
+                  onCheckedChange={(c) => handleChange("is_sold", c)} 
+                />
+                <Label htmlFor="is_sold" className="cursor-pointer font-medium text-red-600">SOLD</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="is_property_pilihan" 
+                  checked={formData.is_property_pilihan} 
+                  onCheckedChange={(c) => handleChange("is_property_pilihan", c)} 
+                />
+                <Label htmlFor="is_property_pilihan" className="cursor-pointer font-medium">Properti Pilihan</Label>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         
         {/* Image Upload with Auto WebP Conversion */}
         <div>
@@ -1648,7 +1777,7 @@ export function ProductionPropertyForm({
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4 text-sm">
+          <div className="space-y-4 text-sm" ref={agreementPreviewRef}>
             {/* Agreement Type */}
             <div className="text-center font-semibold mb-4">
               {agreementData?.agreement_type === 'exclusive_booster' 
@@ -1748,7 +1877,7 @@ export function ProductionPropertyForm({
                 
                 <p className="font-semibold mt-2">5. BIAYA PEMASARAN</p>
                 <ul className="text-xs list-disc pl-4 mt-1">
-                  <li>Biaya Admin: Rp 1.500.000/bulan</li>
+                  <li>Biaya Admin: Rp 1.500.000 (dibayar di awal/fixed)</li>
                   <li>Biaya Ads: Dimulai dari Rp 50.000/hari</li>
                 </ul>
               </div>
@@ -1948,7 +2077,11 @@ export function ProductionPropertyForm({
                       if (signatureCanvasRef.current) {
                         const dataURL = signatureCanvasRef.current.toDataURL('image/png');
                         setOwnerSignature(dataURL);
-                        toast.success('Tanda tangan disimpan!');
+                        toast({
+                          title: "Tanda Tangan Disimpan",
+                          description: "Tanda tangan berhasil disimpan!",
+                          duration: 3000
+                        });
                       }
                     }}
                     className="bg-green-600 hover:bg-green-700"
@@ -2028,43 +2161,85 @@ export function ProductionPropertyForm({
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-wrap gap-2">
             <Button variant="outline" onClick={() => setShowAgreementPreview(false)}>
               Tutup
             </Button>
             {ownerSignature && (
-              <Button 
-                variant="outline"
-                onClick={generatePDF}
-                className="text-blue-600 border-blue-600 hover:bg-blue-50"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Download PDF
-              </Button>
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={() => downloadAgreementImage('webp')}
+                  disabled={isCapturing}
+                  className="text-green-600 border-green-600 hover:bg-green-50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download WebP
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => downloadAgreementImage('png')}
+                  disabled={isCapturing}
+                  className="text-purple-600 border-purple-600 hover:bg-purple-50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PNG
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={generatePDF}
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                </Button>
+              </>
             )}
             <Button 
               variant="default"
-              disabled={!agreementAccepted || !ownerSignature}
-              onClick={() => {
-                // Call onSuccess with goToComplete=true to proceed to complete step
-                if (onSuccess) {
-                  const lastPropertyId = submittedProperties.length > 0 
-                    ? submittedProperties[submittedProperties.length - 1] 
-                    : '';
-                  onSuccess(lastPropertyId || '', true);
+              disabled={!agreementAccepted || !ownerSignature || isCapturing}
+              onClick={async () => {
+                // Capture and save agreement preview to Supabase
+                try {
+                  const savedUrl = await captureAgreementPreview();
+                  
+                  // Call onSuccess with goToComplete=true to proceed to complete step
+                  if (onSuccess) {
+                    const lastPropertyId = submittedProperties.length > 0 
+                      ? submittedProperties[submittedProperties.length - 1] 
+                      : '';
+                    onSuccess(lastPropertyId || '', true);
+                  }
+                  
+                  toast({
+                    title: "Perjanjian Disetujui",
+                    description: savedUrl ? "Perjanjian marketing telah disimpan dengan preview gambar" : "Perjanjian marketing telah disetujui",
+                    duration: 5000
+                  });
+                  setShowAgreementPreview(false);
+                  // Reset form after agreement
+                  handleResetForm();
+                } catch (error) {
+                  console.error('Error saving agreement:', error);
+                  toast({
+                    title: "Error",
+                    description: "Gagal menyimpan preview perjanjian, tetapi perjanjian tetap disimpan",
+                    variant: "destructive",
+                    duration: 5000
+                  });
+                  // Still proceed even if capture fails
+                  if (onSuccess) {
+                    const lastPropertyId = submittedProperties.length > 0 
+                      ? submittedProperties[submittedProperties.length - 1] 
+                      : '';
+                    onSuccess(lastPropertyId || '', true);
+                  }
+                  setShowAgreementPreview(false);
+                  handleResetForm();
                 }
-                
-                toast({
-                  title: "Perjanjian Disetujui",
-                  description: "Terima kasih! Perjanjian marketing telah disetujui",
-                  duration: 5000
-                });
-                setShowAgreementPreview(false);
-                // Reset form after agreement
-                handleResetForm();
               }}
             >
-              Setuju & Selesai
+              {isCapturing ? "Menyimpan..." : "Setuju & Selesai"}
             </Button>
           </DialogFooter>
         </DialogContent>

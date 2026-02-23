@@ -62,7 +62,7 @@ const MARKETING_OPTIONS = [
     label: "TikTok Ads",
     description: "Tayang Exclusive dengan penargetan terperinci sesuai usia, buying power, lokasi, demografi, minat, perilaku, dll.",
     icon: "🎵",
-    adminFee: 1500000,
+    adminFee: 1000000,
     dailyBudget: 50000
   }
 ];
@@ -91,7 +91,7 @@ export function MarketingAgreementForm({
     meta_ads_admin_fee: 1500000,
     meta_ads_budget_daily: 50000,
     tiktok_ads_enabled: false,
-    tiktok_ads_admin_fee: 1500000,
+    tiktok_ads_admin_fee: 1000000,
     tiktok_ads_budget_daily: 50000,
     
     // Agreement Status
@@ -126,14 +126,25 @@ export function MarketingAgreementForm({
 
   const calculateTotalCost = useCallback(() => {
     let total = 0;
+    const months = formData.exclusive_booster_duration_months;
+    const daysPerMonth = 30;
     
     if (formData.agreement_type === "exclusive_booster") {
-      // Add marketing admin fees
+      // Calculate Meta Ads total
       if (formData.meta_ads_enabled) {
-        total += formData.meta_ads_admin_fee * formData.exclusive_booster_duration_months;
+        // Admin fee dibayar sekali di awal
+        const adminFeeTotal = formData.meta_ads_admin_fee;
+        // Budget iklan per bulan × bulan
+        const adsCostTotal = formData.meta_ads_budget_daily * daysPerMonth * months;
+        total += adminFeeTotal + adsCostTotal;
       }
+      // Calculate TikTok Ads total
       if (formData.tiktok_ads_enabled) {
-        total += formData.tiktok_ads_admin_fee * formData.exclusive_booster_duration_months;
+        // Admin fee dibayar sekali di awal
+        const adminFeeTotal = formData.tiktok_ads_admin_fee;
+        // Budget iklan per bulan × bulan
+        const adsCostTotal = formData.tiktok_ads_budget_daily * daysPerMonth * months;
+        total += adminFeeTotal + adsCostTotal;
       }
     }
     
@@ -399,14 +410,10 @@ export function MarketingAgreementForm({
                         <div className="ml-8 mt-2 p-3 bg-gray-50 rounded-lg space-y-2">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label className="text-xs">Admin Fee per Bulan</Label>
-                              <Input
-                                type="number"
-                                value={formData[`${option.id}_admin_fee` as keyof formData] as number}
-                                onChange={(e) => handleChange(`${option.id}_admin_fee`, parseInt(e.target.value))}
-                                disabled={isReadOnly}
-                                className="h-8"
-                              />
+                              <Label className="text-xs">Admin Fee (Dibayar Sekali di Awal)</Label>
+                              <div className="h-8 px-3 py-2 rounded-md border border-gray-200 bg-gray-100 text-sm font-medium text-gray-700 flex items-center">
+                                {option.id === 'meta_ads' ? 'Rp 1.500.000' : 'Rp 1.000.000'}
+                              </div>
                             </div>
                             <div>
                               <Label className="text-xs">Budget Ads Harian</Label>
@@ -439,7 +446,7 @@ export function MarketingAgreementForm({
                     </span>
                   </div>
                   <p className="text-xs text-green-600 mt-1">
-                    {formData.exclusive_booster_duration_months} bulan × (Admin Fee + Budget Ads)
+                    {formData.exclusive_booster_duration_months} bulan × Budget Ads + Admin Fee (sekali)
                   </p>
                 </div>
               )}

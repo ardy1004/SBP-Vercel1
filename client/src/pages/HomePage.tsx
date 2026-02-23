@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -14,7 +14,8 @@ import { supabase } from "@/lib/supabase";
 import { usePropertyStore } from "@/store/propertyStore";
 
 export default function HomePage() {
-   const [, setLocation] = useLocation();
+  // setLocation is kept for potential future use
+  const [, /*setLocation*/] = useLocation();
    const [searchFilters, setSearchFilters] = useState<any>({});
    const [advancedFilters, setAdvancedFilters] = useState<FilterValues>({});
    const [keyword, setKeyword] = useState<string>("");
@@ -117,7 +118,6 @@ export default function HomePage() {
   // Fetch filtered properties with infinite scroll using React Query
   const {
     data,
-    error,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -416,194 +416,6 @@ export default function HomePage() {
 
     window.scrollTo({ top: 800, behavior: 'smooth' });
   };
-
-  const handleApplyAdvancedFilters = (filters: FilterValues) => {
-    console.log('Applying advanced filters:', filters);
-    setAdvancedFilters(filters);
-  };
-
-  // Smart search parsing function
-  const parseSearchIntent = (searchTerm: string) => {
-    const term = searchTerm.toLowerCase().trim();
-    const suggestions: Partial<FilterValues & { propertyType?: string; status?: string }> = {};
-
-    // Property type detection
-    const propertyTypes = {
-      'rumah': 'rumah',
-      'apartemen': 'apartemen',
-      'kost': 'kost',
-      'villa': 'villa',
-      'ruko': 'ruko',
-      'tanah': 'tanah',
-      'kantor': 'kantor',
-      'gedung': 'gedung',
-      'gudang': 'gudang'
-    };
-
-    for (const [key, value] of Object.entries(propertyTypes)) {
-      if (term.includes(key)) {
-        suggestions.propertyType = value;
-        break;
-      }
-    }
-
-    // Status detection
-    if (term.includes('jual') || term.includes('dijual')) {
-      suggestions.status = 'dijual';
-    } else if (term.includes('sewa') || term.includes('disewa')) {
-      suggestions.status = 'disewakan';
-    }
-
-    // Landmark and location mapping (Indonesian landmarks and their cities)
-    const landmarkMap: { [key: string]: { province: string; regency?: string } } = {
-      // Yogyakarta landmarks
-      'ugm': { province: 'Yogyakarta', regency: 'Sleman' },
-      'universitas gadjah mada': { province: 'Yogyakarta', regency: 'Sleman' },
-      'ugm yogyakarta': { province: 'Yogyakarta', regency: 'Sleman' },
-      'ugm jogja': { province: 'Yogyakarta', regency: 'Sleman' },
-      'ugm sleman': { province: 'Yogyakarta', regency: 'Sleman' },
-      'universitas islam indonesia': { province: 'Yogyakarta', regency: 'Sleman' },
-      'uii': { province: 'Yogyakarta', regency: 'Sleman' },
-      'universitas negeri yogyakarta': { province: 'Yogyakarta', regency: 'Sleman' },
-      'uny': { province: 'Yogyakarta', regency: 'Sleman' },
-      'institut teknologi bandung': { province: 'Jawa Barat', regency: 'Bandung' },
-      'itb': { province: 'Jawa Barat', regency: 'Bandung' },
-      'universitas indonesia': { province: 'Jakarta', regency: 'Depok' },
-      'ui': { province: 'Jakarta', regency: 'Depok' },
-      'institut teknologi sepuluh nopember': { province: 'Jawa Timur', regency: 'Surabaya' },
-      'its': { province: 'Jawa Timur', regency: 'Surabaya' },
-      'universitas brawijaya': { province: 'Jawa Timur', regency: 'Malang' },
-      'ub': { province: 'Jawa Timur', regency: 'Malang' },
-      'universitas diponegoro': { province: 'Jawa Tengah', regency: 'Semarang' },
-      'undip': { province: 'Jawa Tengah', regency: 'Semarang' },
-
-      // Shopping centers and landmarks
-      'grand indonesia mall': { province: 'Jakarta', regency: 'Jakarta Pusat' },
-      'grand indonesia': { province: 'Jakarta', regency: 'Jakarta Pusat' },
-      'plaza indonesia': { province: 'Jakarta', regency: 'Jakarta Pusat' },
-      'trans studio mall': { province: 'Jawa Barat', regency: 'Bandung' },
-      'trans studio': { province: 'Jawa Barat', regency: 'Bandung' },
-      'ciputra mall': { province: 'Jawa Barat', regency: 'Bandung' },
-      'ciputra': { province: 'Jawa Barat', regency: 'Bandung' },
-      'malioboro': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-      'kraton yogyakarta': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-      'kraton jogja': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-      'tugu yogyakarta': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-      'tugu jogja': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-
-      // Transportation hubs
-      'stasiun yogyakarta': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-      'stasiun jogja': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-      'stasiun tugu': { province: 'Yogyakarta', regency: 'Yogyakarta' },
-      'bandara adisutjipto': { province: 'Yogyakarta', regency: 'Sleman' },
-      'bandara yogyakarta': { province: 'Yogyakarta', regency: 'Sleman' },
-      'bandara jogja': { province: 'Yogyakarta', regency: 'Sleman' },
-      'bandara soekarno hatta': { province: 'Jakarta', regency: 'Tangerang' },
-      'bandara cengkareng': { province: 'Jakarta', regency: 'Tangerang' },
-
-      // Districts and areas
-      'condong catur': { province: 'Yogyakarta', regency: 'Sleman' },
-      'seturan': { province: 'Yogyakarta', regency: 'Sleman' },
-      'depok': { province: 'Yogyakarta', regency: 'Sleman' },
-      'gamping': { province: 'Yogyakarta', regency: 'Sleman' },
-      'mlati': { province: 'Yogyakarta', regency: 'Sleman' },
-      'sleman': { province: 'Yogyakarta', regency: 'Sleman' },
-      'bantul': { province: 'Yogyakarta', regency: 'Bantul' },
-      'kulon progo': { province: 'Yogyakarta', regency: 'Kulon Progo' },
-      'gunung kidul': { province: 'Yogyakarta', regency: 'Gunung Kidul' }
-    };
-
-    // Check for landmarks first (more specific)
-    for (const [landmark, location] of Object.entries(landmarkMap)) {
-      if (term.includes(landmark) || landmark.includes(term)) {
-        suggestions.province = location.province;
-        if (location.regency) {
-          suggestions.regency = location.regency;
-        }
-        console.log(`🏛️ Landmark detected: "${landmark}" → ${location.province}${location.regency ? `, ${location.regency}` : ''}`);
-        break;
-      }
-    }
-
-    // Location detection (Indonesian cities/provinces) - fallback if no landmark found
-    if (!suggestions.province) {
-      const locations = [
-        'jakarta', 'bandung', 'surabaya', 'yogyakarta', 'jogja', 'semarang', 'medan', 'makassar',
-        'palembang', 'batam', 'pekanbaru', 'bali', 'lombok', 'jawa', 'sumatera', 'kalimantan'
-      ];
-
-      for (const location of locations) {
-        if (term.includes(location)) {
-          if (location.length > 3) { // Avoid false positives with short words
-            suggestions.province = location.charAt(0).toUpperCase() + location.slice(1);
-            // Special case for 'jogja' → 'Yogyakarta'
-            if (location === 'jogja') {
-              suggestions.province = 'Yogyakarta';
-            }
-            break;
-          }
-        }
-      }
-    }
-
-    // Contextual phrase detection (e.g., "dekat UGM", "sekitar ITB")
-    const contextualPatterns = [
-      /(dekat|sekitar|deket|sekitar)\s+(\w+)/i,
-      /(di\s+area|di\s+daerah)\s+(\w+)/i,
-      /(lokasi|area)\s+(\w+)/i
-    ];
-
-    for (const pattern of contextualPatterns) {
-      const match = term.match(pattern);
-      if (match && match[2]) {
-        const contextLocation = match[2].toLowerCase();
-        // Check if the contextual word is a known landmark
-        for (const [landmark, location] of Object.entries(landmarkMap)) {
-          if (landmark.includes(contextLocation) || contextLocation.includes(landmark.split(' ')[0])) {
-            suggestions.province = location.province;
-            if (location.regency) {
-              suggestions.regency = location.regency;
-            }
-            console.log(`📍 Contextual location detected: "${match[0]}" → ${location.province}${location.regency ? `, ${location.regency}` : ''}`);
-            break;
-          }
-        }
-        break;
-      }
-    }
-
-    // Price range detection
-    const pricePatterns = [
-      /(\d+(?:\.\d+)?)\s*juta/i,
-      /(\d+(?:\.\d+)?)\s*milyar/i,
-      /rp\s*(\d+(?:\.\d+)?(?:m|juta|milyar)?)/i,
-      /(\d+(?:\.\d+)?)\s*jt/i,
-      /(\d+(?:\.\d+)?)\s*m/i
-    ];
-
-    for (const pattern of pricePatterns) {
-      const match = term.match(pattern);
-      if (match) {
-        let price = parseFloat(match[1]);
-
-        // Convert to rupiah
-        if (match[0].includes('milyar') || match[0].includes('m ') || match[0].includes(' m')) {
-          price *= 1000000000; // Convert billion to rupiah
-        } else if (match[0].includes('juta') || match[0].includes('jt') || match[0].includes('m')) {
-          price *= 1000000; // Convert million to rupiah
-        }
-
-        // Set as minimum price, allow some flexibility
-        suggestions.minPrice = Math.max(0, price * 0.8); // 80% of stated price
-        suggestions.maxPrice = price * 1.5; // 150% of stated price
-        break;
-      }
-    }
-
-    return suggestions;
-  };
-
-
 
   const toggleFavorite = (id: string) => {
     if (favorites.includes(id)) {

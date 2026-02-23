@@ -188,6 +188,10 @@ CREATE TABLE public.marketing_agreements (
     terms_accepted_at TIMESTAMPTZ,
     agreement_document_url TEXT,
     
+    -- Agreement Preview Image (WebP)
+    agreement_preview_url TEXT,
+    signed_at TIMESTAMPTZ,
+    
     -- Metadata
     created_by TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),

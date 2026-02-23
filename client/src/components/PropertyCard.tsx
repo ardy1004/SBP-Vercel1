@@ -190,7 +190,7 @@ const PropertyCardComponent = ({ property, onToggleFavorite, isFavorite }: Prope
             `}
           />
 
-          {/* Image Navigation Arrows - Only show if multiple images */}
+          {/* Image Navigation - Pagination Dots */}
           {hasMultipleImages && (
             <>
               {/* Left Arrow */}
@@ -209,9 +209,23 @@ const PropertyCardComponent = ({ property, onToggleFavorite, isFavorite }: Prope
               >
                 <ChevronRight className="w-5 h-5 text-gray-700" />
               </button>
-              {/* Image Counter */}
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 px-2 py-1 bg-black/60 rounded-full text-white text-xs font-medium">
-                {currentImageIndex + 1} / {allImages.length}
+              {/* Pagination Dots */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1.5 bg-black/40 backdrop-blur-sm rounded-full">
+                {allImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`transition-all duration-200 rounded-full ${
+                      index === currentImageIndex
+                        ? 'w-2.5 h-2.5 bg-white scale-110'
+                        : 'w-2 h-2 bg-white/50 hover:bg-white/70'
+                    }`}
+                    aria-label={`Go to image ${index + 1}`}
+                  />
+                ))}
               </div>
             </>
           )}

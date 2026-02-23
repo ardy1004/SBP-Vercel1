@@ -20,7 +20,9 @@ import {
   List,
   Eye,
   Star,
-  AlertTriangle
+  AlertTriangle,
+  FileText,
+  ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -85,6 +87,7 @@ export default function EnhancedAdminPropertiesPage() {
   const [bulkKabupatenValue, setBulkKabupatenValue] = useState<string>("");
   const [bulkJenisPropertiValue, setBulkJenisPropertiValue] = useState<string>("");
   const [deletePropertyId, setDeletePropertyId] = useState<string | null>(null);
+  const [viewAgreementProperty, setViewAgreementProperty] = useState<any>(null);
   const { toast } = useToast();
 
   // Get active tab from URL params
@@ -111,7 +114,30 @@ export default function EnhancedAdminPropertiesPage() {
         throw error;
       }
 
-      return data || [];
+      // Also fetch marketing agreements for these properties
+      const propertyIds = (data || []).map((p: any) => p.id);
+      let agreementsMap: Record<string, any> = {};
+      
+      if (propertyIds.length > 0) {
+        const { data: agreementsData } = await supabase
+          .from('marketing_agreements')
+          .select('*')
+          .in('property_id', propertyIds);
+        
+        if (agreementsData) {
+          agreementsData.forEach((agr: any) => {
+            agreementsMap[agr.property_id] = agr;
+          });
+        }
+      }
+
+      // Attach agreement data to properties
+      const propertiesWithAgreements = (data || []).map((property: any) => ({
+        ...property,
+        agreement: agreementsMap[property.id] || null
+      }));
+
+      return propertiesWithAgreements || [];
     },
   });
 
@@ -188,6 +214,12 @@ export default function EnhancedAdminPropertiesPage() {
     ownerContact: property.owner_contact,
     owner_contact: property.owner_contact,
     status: property.status,
+    
+    // Agreement data
+    agreement: property.agreement,
+    agreementStatus: property.agreement?.agreement_status,
+    agreementType: property.agreement?.agreement_type,
+    agreementPreviewUrl: property.agreement?.agreement_preview_url,
     metaTitle: property.meta_title,
     metaDescription: property.meta_description,
     createdAt: new Date(property.created_at),
@@ -554,6 +586,26 @@ export default function EnhancedAdminPropertiesPage() {
                 {property.isPremium && <Badge variant="secondary" className="text-xs">Premium</Badge>}
                 {property.isHot && <Badge variant="destructive" className="text-xs">Hot</Badge>}
                 {property.isSold && <Badge variant="destructive" className="text-xs">Sold</Badge>}
+                {property.agreementStatus === 'signed' && (
+                  <Badge variant="default" className="text-xs bg-green-600">
+                    <FileText className="h-3 w-3 mr-1" />
+                    Agreement
+                  </Badge>
+                )}
+                {property.agreementPreviewUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setViewAgreementProperty(property);
+                    }}
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                )}
                 <Badge variant="outline" className="text-xs">{property.status}</Badge>
               </div>
             </div>
@@ -820,6 +872,61 @@ export default function EnhancedAdminPropertiesPage() {
                 queryClient.invalidateQueries({ queryKey: ['admin-properties'] });
               }}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Agreement Preview Dialog */}
+        <Dialog open={!!viewAgreementProperty} onOpenChange={() => setViewAgreementProperty(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                Agreement Preview
+              </DialogTitle>
+              <DialogDescription>
+                Perjanjian Marketing - {viewAgreementProperty?.kodeListing}
+              </DialogDescription>
+            </DialogHeader>
+            {viewAgreementProperty?.agreementPreviewUrl ? (
+              <div className="space-y-4">
+                <div className="border rounded-lg overflow-hidden">
+                  <img 
+                    src={viewAgreementProperty.agreementPreviewUrl} 
+                    alt="Agreement Preview" 
+                    className="w-full h-auto"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open(viewAgreementProperty.agreementPreviewUrl, '_blank')}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Open Full Size
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = viewAgreementProperty.agreementPreviewUrl;
+                      link.download = `perjanjian_${viewAgreementProperty.kodeListing}.webp`;
+                      link.click();
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>Agreement Type:</strong> {viewAgreementProperty.agreementType === 'exclusive_booster' ? 'Exclusive Booster' : 'Open Listing'}</p>
+                  <p><strong>Status:</strong> {viewAgreementProperty.agreementStatus}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No agreement preview available</p>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
