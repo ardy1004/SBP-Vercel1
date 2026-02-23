@@ -468,7 +468,7 @@ export function ProductionPropertyForm({
         
         <div class="section">
           <div class="section-title">PASAL 1 - OBJEK PERJANJIAN</div>
-          <p>PIHAK KEDUA memberikan hak pemasaran secara ${agreementData?.agreement_type === 'exclusive_booster' ? 'EXCLUSIVE' : 'BEBAS'} kepada PIHAK PERTAMA untuk memasarkan properti milik PIHAK KEDUA dengan data sebagai berikut:</p>
+          <p>PIHAK KEDUA memberikan hak pemasaran secara ${agreementData?.agreement_type === 'exclusive_booster' ? 'EXCLUSIVE' : 'BEBAS / TIDAK TERIKAT'} kepada PIHAK PERTAMA untuk memasarkan properti milik PIHAK KEDUA dengan data sebagai berikut:</p>
           <div style="background: #f5f5f5; padding: 10px;">
             <div><strong>Jenis Properti :</strong> ${formData.jenis_properti || '-'}</div>
             <div><strong>Sertifikat :</strong> ${formData.legalitas || '-'}</div>
@@ -481,12 +481,14 @@ export function ProductionPropertyForm({
           <div class="section-title">PASAL 2 - JENIS LISTING DAN MASA KONTRAK</div>
           <p>Jenis listing yang disepakati adalah ${agreementData?.agreement_type === 'exclusive_booster' ? 'EXCLUSIVE LISTING' : 'OPEN LISTING'}.</p>
           ${agreementData?.agreement_type === 'exclusive_booster' ? `<p>Masa kontrak berlaku selama ${agreementData?.exclusive_booster_duration_months || 6} bulan, terhitung sejak tanggal ditandatanganinya perjanjian ini.</p>` : ''}
-          <p>Apabila properti terjual selama masa kontrak, maka transaksi tersebut tetap dianggap sebagai hasil kerja PIHAK PERTAMA.</p>
+          ${agreementData?.agreement_type !== 'exclusive_booster' ? `<p>PIHAK KEDUA boleh dan bebas memasarkan propertinya sendiri atau melalui Agent / Perantara Lain selain kepada PIHAK PERTAMA.</p>` : ''}
+          ${agreementData?.agreement_type !== 'exclusive_booster' ? `<p>Apabila properti terjual oleh calon pembeli dari PIHAK PERTAMA, maka PIHAK KEDUA wajib membayarkan fee 3% dari harga deal penjualan kepada pihak pertama.</p>` : ''}
+          ${agreementData?.agreement_type === 'exclusive_booster' ? '<p>Apabila properti terjual selama masa kontrak, maka transaksi tersebut tetap dianggap sebagai hasil kerja PIHAK PERTAMA.</p>' : ''}
         </div>
         
         <div class="section">
           <div class="section-title">PASAL 3 - KETENTUAN FEE / KOMISI</div>
-          <p>PIHAK KEDUA menyetujui membayar fee atau komisi sebesar 3% (tiga persen) dari harga deal + biaya pemasaran kepada PIHAK PERTAMA.</p>
+          <p>PIHAK KEDUA menyetujui membayar fee atau komisi sebesar 3% (tiga persen) dari harga deal PENJUALAN kepada PIHAK PERTAMA jika PIHAK PERTAMA berhasil menjualkan properti milik PIHAK KEDUA.</p>
           <p>Pembayaran fee dilakukan selambat-lambatnya 3 (tiga) hari setelah:</p>
           <ul>
             <li>Akta Jual Beli (AJB) ditandatangani, atau</li>
@@ -1824,7 +1826,7 @@ export function ProductionPropertyForm({
             <div className="border-t pt-3">
               <p className="font-semibold">PASAL 1</p>
               <p className="font-semibold">OBJEK PERJANJIAN</p>
-              <p className="mt-1 text-xs">PIHAK KEDUA memberikan hak pemasaran secara {agreementData?.agreement_type === 'exclusive_booster' ? 'EXCLUSIVE' : 'BEBAS'} kepada PIHAK PERTAMA untuk memasarkan properti milik PIHAK KEDUA dengan data sebagai berikut:</p>
+              <p className="mt-1 text-xs">PIHAK KEDUA memberikan hak pemasaran secara {agreementData?.agreement_type === 'exclusive_booster' ? 'EXCLUSIVE' : 'BEBAS / TIDAK TERIKAT'} kepada PIHAK PERTAMA untuk memasarkan properti milik PIHAK KEDUA dengan data sebagai berikut:</p>
               
               <div className="mt-2 text-xs bg-gray-50 p-2 rounded">
                 <p className="font-semibold">Objek Properti</p>
@@ -1847,7 +1849,12 @@ export function ProductionPropertyForm({
                 {agreementData?.agreement_type === 'exclusive_booster' && (
                   <p>Selama masa kontrak berlangsung, PIHAK KEDUA tidak diperkenankan menunjuk agen properti lain untuk memasarkan objek properti sebagaimana dimaksud dalam Pasal 1.</p>
                 )}
-                <p>Apabila properti terjual selama masa kontrak, maka transaksi tersebut tetap dianggap sebagai hasil kerja PIHAK PERTAMA.</p>
+                {agreementData?.agreement_type !== 'exclusive_booster' && (
+                  <p>PIHAK KEDUA boleh dan bebas memasarkan propertinya sendiri atau melalui Agent / Perantara Lain selain kepada PIHAK PERTAMA.</p>
+                )}
+                {agreementData?.agreement_type !== 'exclusive_booster' && (
+                  <p>Apabila properti terjual oleh calon pembeli dari PIHAK PERTAMA, maka PIHAK KEDUA wajib membayarkan fee 3% dari harga deal penjualan kepada pihak pertama.</p>
+                )}
               </div>
             </div>
 
@@ -1856,7 +1863,7 @@ export function ProductionPropertyForm({
               <p className="font-semibold">PASAL 3</p>
               <p className="font-semibold">KETENTUAN FEE / KOMISI</p>
               <div className="mt-1 text-xs space-y-1">
-                <p>PIHAK KEDUA menyetujui membayar fee atau komisi sebesar 3% (tiga persen) dari harga deal + biaya pemasaran kepada PIHAK PERTAMA.</p>
+                <p>PIHAK KEDUA menyetujui membayar fee atau komisi sebesar 3% (tiga persen) dari harga deal PENJUALAN kepada PIHAK PERTAMA jika PIHAK PERTAMA berhasil menjualkan properti milik PIHAK KEDUA.</p>
                 <p>Pembayaran fee dilakukan selambat-lambatnya 3 (tiga) hari setelah:</p>
                 <ul className="list-disc pl-4">
                   <li>Akta Jual Beli (AJB) ditandatangani, atau</li>
