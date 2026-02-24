@@ -12,6 +12,7 @@
 !lighthouserc.json
 !components.json
 !playwright.config.ts
+!vercel.json
 
 # Service account keys - DANGER: Never commit these!
 *service-account*.json
