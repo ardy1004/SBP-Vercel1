@@ -1379,6 +1379,15 @@ export function ProductionPropertyForm({
                 placeholder="500000000"
               />
             </div>
+            <div>
+              <Label>Harga Lama / Coret (Rp) - Optional</Label>
+              <Input
+                value={formData.price_old}
+                onChange={(e) => handlePriceChange("price_old", e.target.value)}
+                placeholder="Contoh: 650000000"
+              />
+              <p className="text-xs text-gray-500 mt-1">Harga lama akan ditampilkan dengan coretan di homepage</p>
+            </div>
             <div className="flex flex-col gap-2 pt-6">
               <div className="flex items-center gap-2">
                 <Checkbox id="harga_nego" checked={formData.harga_nego} onCheckedChange={(c) => handleChange("harga_nego", c)} />

@@ -133,7 +133,8 @@ const PropertyCardComponent = ({ property, onToggleFavorite, isFavorite }: Prope
   };
 
   const getLabel = () => {
-    if (property.isHot) return { type: 'hot', text: 'HOT', color: 'bg-orange-500', icon: '🔥' };
+    // Auto HOT if there's a discounted price (price_old exists)
+    if (property.isHot || property.priceOld) return { type: 'hot', text: 'HOT', color: 'bg-orange-500', icon: '🔥' };
     if (property.isPremium) return { type: 'premium', text: 'PREMIUM', color: 'bg-gradient-to-r from-yellow-400 to-yellow-600', icon: '👑' };
     if (property.isFeatured) return { type: 'featured', text: 'FEATURED', color: 'bg-cyan-500', icon: '💎' };
     return null;
@@ -351,7 +352,7 @@ const PropertyCardComponent = ({ property, onToggleFavorite, isFavorite }: Prope
 
         {/* Price - More compact spacing */}
         <div className="space-y-0.5 sm:space-y-1">
-          {property.isHot && property.priceOld && (
+          {property.priceOld && (
             <div className="flex items-center gap-1.5 sm:gap-2">
               <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
               <span className="text-xs sm:text-sm text-gray-500 line-through">

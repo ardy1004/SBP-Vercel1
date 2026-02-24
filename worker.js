@@ -1383,12 +1383,12 @@ function sanitizeNumeric(input, min = 0, max = Number.MAX_SAFE_INTEGER) {
 function getSecurityHeaders() {
 	const csp = [
 		"default-src 'self'",
-		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com https://*.googletagmanager.com https://*.google-analytics.com",
+		"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.googleapis.com https://*.googletagmanager.com https://*.google-analytics.com https://connect.facebook.net",
 		"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
 		"font-src 'self' https://fonts.gstatic.com",
-		"img-src 'self' data: https: blob:",
-		"connect-src 'self' https://*.supabase.co https://*.googleapis.com https://*.google-analytics.com https://*.googletagmanager.com",
-		"frame-src 'self'",
+		"img-src 'self' data: https: blob: https://www.facebook.com",
+		"connect-src 'self' https://*.supabase.co https://*.googleapis.com https://*.google-analytics.com https://*.googletagmanager.com https://graph.facebook.com",
+		"frame-src 'self' https://www.facebook.com",
 		"object-src 'none'",
 		"base-uri 'self'",
 		"form-action 'self'",
