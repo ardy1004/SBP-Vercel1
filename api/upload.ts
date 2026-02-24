@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getCORSHeaders, checkRateLimit } from './_lib/utils';
+import { getCORSHeaders, checkRateLimit, getEnvVar } from './_lib/utils';
 import formidable from 'formidable';
 import fs from 'fs';
 
@@ -40,8 +40,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const cfAccountId = process.env.CF_ACCOUNT_ID;
-  const cfImagesToken = process.env.CF_IMAGES_TOKEN;
+  const cfAccountId = getEnvVar('CF_ACCOUNT_ID');
+  const cfImagesToken = getEnvVar('CF_IMAGES_TOKEN');
 
   if (!cfAccountId || !cfImagesToken) {
     console.error('Cloudflare Images configuration missing');

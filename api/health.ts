@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getCORSHeaders, getSecurityHeaders } from './_lib/utils';
+import { getCORSHeaders, getEnvVar } from './_lib/utils';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -17,23 +17,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const startTime = Date.now();
 
-  // Check environment variables
-  const env = {
-    SUPABASE_URL: process.env.SUPABASE_URL || '',
-    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
-    GEMINI_API_KEY: process.env.GEMINI_API_KEY || '',
-    GA_PROPERTY_ID: process.env.GA_PROPERTY_ID || '',
-    SEARCH_CONSOLE_SITE_URL: process.env.SEARCH_CONSOLE_SITE_URL || '',
-  };
+  // Check environment variables (supports both VITE_ and non-VITE prefixes)
+  const supabaseUrl = getEnvVar('SUPABASE_URL');
+  const supabaseKey = getEnvVar('SUPABASE_ANON_KEY');
+  const geminiKey = getEnvVar('GEMINI_API_KEY');
 
   // Check database connectivity
   let dbStatus = 'unknown';
   try {
-    if (env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
-      const dbResponse = await fetch(`${env.SUPABASE_URL}/rest/v1/properties?select=id&limit=1`, {
+    if (supabaseUrl && supabaseKey) {
+      const dbResponse = await fetch(`${supabaseUrl}/rest/v1/properties?select=id&limit=1`, {
         headers: {
-          'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
-          'apikey': env.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
         },
       });
       dbStatus = dbResponse.ok ? 'healthy' : 'unhealthy';
@@ -47,8 +43,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Check AI services
   let aiStatus = 'unknown';
   try {
-    if (env.GEMINI_API_KEY) {
-      const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${env.GEMINI_API_KEY}`, {
+    if (geminiKey) {
+      const aiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -85,6 +81,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     system: {
       platform: 'vercel-serverless',
       region: process.env.VERCEL_REGION || 'unknown',
+    },
+    env_check: {
+      has_supabase_url: !!supabaseUrl,
+      has_supabase_key: !!supabaseKey,
+      has_gemini_key: !!geminiKey,
     }
   };
 

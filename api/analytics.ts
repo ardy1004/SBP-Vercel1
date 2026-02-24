@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getCORSHeaders, checkRateLimit } from './_lib/utils';
+import { getCORSHeaders, checkRateLimit, getEnvVar } from './_lib/utils';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -31,8 +31,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  const gaCredentials = process.env.GA_SERVICE_ACCOUNT_KEY;
-  const gaPropertyId = process.env.GA_PROPERTY_ID;
+  const gaCredentials = getEnvVar('GA_SERVICE_ACCOUNT_KEY');
+  const gaPropertyId = getEnvVar('GA_PROPERTY_ID');
 
   if (!gaCredentials || !gaPropertyId) {
     console.error('GA4 credentials not configured');

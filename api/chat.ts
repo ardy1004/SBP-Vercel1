@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getCORSHeaders, checkRateLimit } from './_lib/utils';
+import { getCORSHeaders, checkRateLimit, getEnvVar } from './_lib/utils';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
@@ -38,8 +38,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'Messages array required' });
     }
 
-    // Get API key from environment
-    const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+    // Get API key from environment (supports both VITE_ and non-VITE prefixes)
+    const geminiApiKey = getEnvVar('GEMINI_API_KEY');
     if (!geminiApiKey) {
       console.error('Gemini API key not configured');
       return res.status(503).json({ error: 'AI service unavailable' });

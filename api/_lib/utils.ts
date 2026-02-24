@@ -202,3 +202,22 @@ export interface EnvConfig {
   CF_IMAGES_TOKEN?: string;
   CF_ACCOUNT_ID?: string;
 }
+
+// Helper to get environment variables (supports both VITE_ and non-VITE prefixes)
+export function getEnvVar(key: string): string | undefined {
+  // For Vercel serverless functions, use process.env
+  // Try both with and without VITE_ prefix
+  return process.env[key] || process.env[`VITE_${key}`] || process.env[key.replace('VITE_', '')];
+}
+
+// Get Supabase configuration
+export function getSupabaseConfig() {
+  const url = getEnvVar('SUPABASE_URL');
+  const key = getEnvVar('SUPABASE_ANON_KEY');
+  
+  if (!url || !key) {
+    console.error('Missing Supabase configuration. Set SUPABASE_URL and SUPABASE_ANON_KEY in Vercel environment variables.');
+  }
+  
+  return { url, key };
+}
