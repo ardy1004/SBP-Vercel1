@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getCORSHeaders, checkRateLimit, getEnvVar } from './_lib/utils';
 import formidable from 'formidable';
 import fs from 'fs';
+import sharp from 'sharp';
 
 // Disable body parsing for file uploads
 export const config = {
@@ -10,9 +11,13 @@ export const config = {
   },
 };
 
+// Cloudflare Configuration
+const CF_ACCOUNT_ID = () => getEnvVar('CF_ACCOUNT_ID');
+const CF_IMAGES_TOKEN = () => getEnvVar('CF_IMAGES_TOKEN');
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
-  const origin = req.headers.get('origin') || req.headers.get('Origin') || null;
+  const origin = req.headers.origin || req.headers.Origin || null;
   const corsHeaders = getCORSHeaders(origin);
   
   Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -29,25 +34,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Rate limiting
-  const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-  const rateLimitResult = checkRateLimit(String(clientIP), '/upload', 'IMAGE_UPLOAD');
+  const clientIP = (req.headers['x-forwarded-for'] as string) || 
+                   (req.headers['x-real-ip'] as string) || 
+                   'unknown';
+  const rateLimitResult = checkRateLimit(String(clientIP).split(',')[0].trim(), '/upload', 'IMAGE_UPLOAD');
   
   if (!rateLimitResult.allowed) {
+    const retryAfter = rateLimitResult.resetTime ? Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000) : 60;
     return res.status(429).json({
       error: 'Rate limit exceeded',
       message: 'Terlalu banyak permintaan. Silakan coba lagi nanti.',
-      retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)
+      retryAfter
     });
   }
 
-  const cfAccountId = getEnvVar('CF_ACCOUNT_ID');
-  const cfImagesToken = getEnvVar('CF_IMAGES_TOKEN');
+  // Check Cloudflare Images configuration
+  const cfAccountId = CF_ACCOUNT_ID();
+  const cfImagesToken = CF_IMAGES_TOKEN();
 
   if (!cfAccountId || !cfImagesToken) {
     console.error('Cloudflare Images configuration missing');
     return res.status(500).json({ 
       error: 'Image upload service not configured',
-      details: 'Missing CF_ACCOUNT_ID or CF_IMAGES_TOKEN'
+      details: 'Missing CF_ACCOUNT_ID or CF_IMAGES_TOKEN. Please set these environment variables in Vercel.'
     });
   }
 
@@ -58,18 +67,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       allowEmptyFiles: false,
     });
 
-    const [fields, files] = await new Promise<[any, any]>((resolve, reject) => {
+    // Parse the form
+    const [fields, files] = await new Promise<any>((resolve, reject) => {
       form.parse(req as any, (err, fields, files) => {
         if (err) reject(err);
         else resolve([fields, files]);
       });
     });
 
-    const file = files.image?.[0];
-    const propertyId = fields.propertyId?.[0];
+    const file = files.image?.[0] || files.file?.[0];
+    const propertyId = fields.propertyId?.[0] || 'general';
 
-    if (!file || !propertyId) {
-      return res.status(400).json({ error: 'Missing file or propertyId' });
+    if (!file) {
+      return res.status(400).json({ error: 'Missing file' });
     }
 
     console.log('Received file for upload:', {
@@ -90,69 +100,118 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.mimetype || '')) {
-      return res.status(400).json({ error: 'Unsupported file type' });
+    if (!file.mimetype || !allowedTypes.includes(file.mimetype)) {
+      return res.status(400).json({ error: 'Unsupported file type. Allowed: JPG, PNG, GIF, WebP' });
     }
 
     // Read file
     const fileBuffer = fs.readFileSync(file.filepath);
 
-    // Upload to Cloudflare Images
-    const cfFormData = new FormData();
-    const blob = new Blob([fileBuffer], { type: file.mimetype });
-    cfFormData.append('file', blob, file.originalFilename);
-    cfFormData.append('requireSignedURLs', 'false');
+    // ========================================
+    // STEP 1: Convert to WebP using Sharp
+    // ========================================
+    console.log('Converting image to WebP format...');
+    
+    const webpBuffer = await sharp(fileBuffer)
+      .webp({ 
+        quality: 85, // Good quality with reasonable file size
+        effort: 6,   // Balance between compression and speed
+      })
+      .toBuffer();
 
-    const cfImagesResponse = await fetch(
+    const compressionRatio = ((1 - webpBuffer.length / file.size) * 100).toFixed(1);
+    console.log(`Image converted: ${file.size} bytes -> ${webpBuffer.length} bytes (WebP, ${compressionRatio}% smaller)`);
+
+    // ========================================
+    // STEP 2: Generate unique image ID
+    // ========================================
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 8);
+    const imageId = `prop-${propertyId}-${timestamp}-${randomId}`;
+
+    // ========================================
+    // STEP 3: Upload to Cloudflare Images
+    // ========================================
+    console.log('Uploading to Cloudflare Images...');
+    
+    // Convert Buffer to Uint8Array for compatibility with FormData
+    const uint8Array = new Uint8Array(webpBuffer);
+    const blob = new Blob([uint8Array], { type: 'image/webp' });
+    
+    const cfFormData = new FormData();
+    cfFormData.append('file', blob, `${imageId}.webp`);
+    cfFormData.append('id', imageId);
+    cfFormData.append('metadata', JSON.stringify({
+      propertyId,
+      originalName: file.originalFilename,
+      uploadedAt: new Date().toISOString(),
+    }));
+    
+    const cfResponse = await fetch(
       `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/images/v1`,
       {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${cfImagesToken}`,
         },
-        body: cfFormData as any,
+        body: cfFormData,
       }
     );
 
     // Clean up temp file
-    fs.unlinkSync(file.filepath);
+    try { 
+      fs.unlinkSync(file.filepath); 
+    } catch (e) { 
+      console.warn('Failed to clean up temp file:', e);
+    }
 
-    if (!cfImagesResponse.ok) {
-      const errorData = await cfImagesResponse.json();
-      console.error('Cloudflare Images upload failed:', errorData);
+    if (!cfResponse.ok) {
+      const errorText = await cfResponse.text();
+      console.error('Cloudflare Images upload failed:', cfResponse.status, errorText);
       return res.status(500).json({ 
-        error: 'Image upload failed', 
-        details: errorData.errors?.[0]?.message || 'Unknown error' 
+        error: 'Failed to upload image',
+        details: `Cloudflare Images API error: ${cfResponse.status}`,
+        response: errorText
       });
     }
 
-    const cfResult = await cfImagesResponse.json();
-    const imageId = cfResult.result.id;
-
-    console.log('Image uploaded to Cloudflare Images:', imageId);
-
-    // Generate URLs
-    const imageUrl = `https://imagedelivery.net/${cfAccountId}/${imageId}/public`;
+    const cfResult = await cfResponse.json();
+    const uploadedImageId = cfResult.result?.id || imageId;
+    
+    // ========================================
+    // STEP 4: Generate URLs
+    // ========================================
+    // Cloudflare Images URL format: https://imagedelivery.net/{account_id}/{image_id}/{variant}
+    const baseUrl = `https://imagedelivery.net/${cfAccountId}/${uploadedImageId}`;
+    
+    const imageUrl = `${baseUrl}/public`;
     const variants = {
-      thumbnail: `https://imagedelivery.net/${cfAccountId}/${imageId}/w=300,sharpen=1,format=auto`,
-      small: `https://imagedelivery.net/${cfAccountId}/${imageId}/w=600,sharpen=1,format=auto`,
-      medium: `https://imagedelivery.net/${cfAccountId}/${imageId}/w=800,sharpen=1,format=auto`,
-      large: `https://imagedelivery.net/${cfAccountId}/${imageId}/w=1200,sharpen=1,format=auto`,
-      original: imageUrl
+      thumbnail: `${baseUrl}/w=300,format=auto`,    // 300px width, auto format (WebP)
+      small: `${baseUrl}/w=600,format=auto`,        // 600px width
+      medium: `${baseUrl}/w=800,format=auto`,       // 800px width
+      large: `${baseUrl}/w=1200,format=auto`,       // 1200px width
+      original: imageUrl,
     };
+
+    console.log('Image uploaded successfully:', imageUrl);
 
     return res.status(200).json({
       success: true,
-      url: variants.medium,
-      originalUrl: variants.original,
+      url: variants.medium, // Default to medium size
+      webpUrl: variants.medium,
       variants,
       propertyId,
-      imageId,
+      imageId: uploadedImageId,
+      format: 'webp',
+      originalSize: file.size,
+      webpSize: webpBuffer.length,
+      compressionRatio: `${compressionRatio}%`,
       metadata: {
         propertyId,
         uploadedAt: new Date().toISOString(),
         originalName: file.originalFilename,
-        fileSize: file.size
+        format: 'webp',
+        imageId: uploadedImageId,
       }
     });
 
