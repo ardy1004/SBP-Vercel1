@@ -459,7 +459,7 @@ export default function PropertyDetailPage() {
                 propertyLabels={{
                   isPremium: property.isPremium,
                   isFeatured: property.isFeatured,
-                  isHot: property.isHot,
+                  isHot: property.isHot || !!property.priceOld,
                   isSold: property.isSold,
                 }}
               />
@@ -496,7 +496,7 @@ export default function PropertyDetailPage() {
                 </div>
 
                 <div className="space-y-1">
-                  {property.isHot && property.priceOld && (
+                  {property.priceOld && (
                     <div className="flex items-center gap-2">
                       <span className="text-lg text-muted-foreground line-through">
                         {formatPrice(property.priceOld, (property as any).hargaPerMeter)}

@@ -138,7 +138,7 @@ export function PropertyPilihanSlider({ properties }: PropertyPilihanSliderProps
            </div>
 
           {/* Property Label Badge - Repositioned and responsive */}
-           {(currentProperty.isPremium || currentProperty.isFeatured || currentProperty.isHot) && (
+           {(currentProperty.isPremium || currentProperty.isFeatured || currentProperty.isHot || currentProperty.priceOld) && (
              <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-10">
                {currentProperty.isPremium && (
                  <span className="inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black shadow-2xl animate-pulse border-2 border-white/20">
@@ -150,13 +150,13 @@ export function PropertyPilihanSlider({ properties }: PropertyPilihanSliderProps
                    💎 FEATURED
                  </span>
                )}
-               {currentProperty.isHot && !currentProperty.isPremium && !currentProperty.isFeatured && (
-                 <span className="inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-2xl border-2 border-white/20">
-                   🔥 HOT
-                 </span>
-               )}
-             </div>
-           )}
+                {(currentProperty.isHot || currentProperty.priceOld) && !currentProperty.isPremium && !currentProperty.isFeatured && (
+                  <span className="inline-flex items-center px-2 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-bold bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-2xl border-2 border-white/20">
+                    🔥 HOT
+                  </span>
+                )}
+              </div>
+            )}
 
          {/* Content Overlay - Bottom-left corner positioning */}
           <div className="absolute bottom-0 left-0 p-8 sm:p-10 md:p-12 lg:p-16 xl:p-20 text-white">
@@ -179,7 +179,7 @@ export function PropertyPilihanSlider({ properties }: PropertyPilihanSliderProps
                     <p className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-white drop-shadow-2xl" data-testid="text-property-price">
                       {formatPrice(currentProperty.hargaProperti, (currentProperty as any).hargaPerMeter)}
                     </p>
-                    {currentProperty.isHot && currentProperty.priceOld && (
+                    {currentProperty.priceOld && (
                       <p className="text-xs sm:text-sm text-white/80 line-through mt-1">
                         {formatPrice(currentProperty.priceOld, (currentProperty as any).hargaPerMeter)}
                       </p>

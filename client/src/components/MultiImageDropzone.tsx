@@ -250,99 +250,120 @@ export function MultiImageDropzone({
 
       // Convert to WebP first
       const webpFile = await convertToWebP(file);
-      console.log('WebP conversion successful, new file:', webpFile.name, 'size:', webpFile.size);
-
-      // Always try to upload to worker in production, fallback to data URL if needed
-      const isProduction = typeof window !== 'undefined' && window.location.hostname === 'salambumi.xyz';
-
-      if (!isProduction) {
-        // For development: Use data URL instead of uploading to avoid cloud dependency
-        console.log('Development mode: Using data URL instead of cloud upload');
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(webpFile);
-        });
-      }
-
-      // Production: Upload to Cloudflare Worker
-      const formData = new FormData();
-      formData.append('image', webpFile);
-      formData.append('propertyId', propertyId || 'temp');
-
-      console.log('Uploading WebP file:', webpFile.name, 'to Cloudflare Worker');
-
-      const workerUrl = 'https://sbp-upload-worker.salambumiproperty-f1b.workers.dev/upload';
-
-      const response = await fetch(workerUrl, {
-        method: 'POST',
-        body: formData,
-        // Add timeout for fetch
-        signal: AbortSignal.timeout(30000), // 30 second timeout
+      console.log('WebP conversion result:', { 
+        originalName: file.name, 
+        webpName: webpFile.name, 
+        originalSize: file.size, 
+        webpSize: webpFile.size,
+        isWebP: webpFile.type === 'image/webp'
       });
 
-      console.log('Worker response status:', response.status);
+      // Check if WebP conversion was successful (file was actually converted)
+      const isWebPConverted = webpFile.type === 'image/webp' && webpFile.name.endsWith('.webp');
+      
+      if (!isWebPConverted) {
+        console.warn('WebP conversion failed or not supported, using original file');
+      }
 
-      if (!response.ok) {
-        let errorMessage = `Upload gagal: ${response.status}`;
-        try {
-          const errorText = await response.text();
-          console.error('Worker error response:', {
-            status: response.status,
-            statusText: response.statusText,
-            body: errorText
-          });
+      // Determine upload target based on environment
+      const workerUrl = import.meta.env.VITE_UPLOAD_WORKER_URL || 'https://sbp-upload-worker.salambumiproperty-f1b.workers.dev/upload';
+      
+      // Try to upload to worker in both production and development
+      // (Worker should work if properly configured)
+      try {
+        const formData = new FormData();
+        formData.append('image', webpFile);
+        formData.append('propertyId', propertyId || 'temp');
 
-          // Try to parse as JSON for better error messages
+        console.log('Uploading file to worker:', workerUrl, 'filename:', webpFile.name);
+
+        const response = await fetch(workerUrl, {
+          method: 'POST',
+          body: formData,
+          // Add timeout for fetch
+          signal: AbortSignal.timeout(30000), // 30 second timeout
+        });
+
+        console.log('Worker response status:', response.status);
+
+        if (!response.ok) {
+          let errorMessage = `Upload gagal: ${response.status}`;
           try {
-            const errorJson = JSON.parse(errorText);
-            errorMessage = errorJson.error || errorMessage;
-          } catch {
-            // If not JSON, use the raw text
-            if (errorText) {
-              errorMessage += ` - ${errorText}`;
+            const errorText = await response.text();
+            console.error('Worker error response:', {
+              status: response.status,
+              statusText: response.statusText,
+              body: errorText
+            });
+
+            // Try to parse as JSON for better error messages
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorMessage = errorJson.error || errorMessage;
+            } catch {
+              // If not JSON, use the raw text
+              if (errorText) {
+                errorMessage += ` - ${errorText}`;
+              }
             }
+          } catch (readError) {
+            console.error('Failed to read error response:', readError);
           }
-        } catch (readError) {
-          console.error('Failed to read error response:', readError);
-        }
 
-        // Provide specific error messages for common issues
-        if (response.status === 404) {
-          errorMessage = 'Worker endpoint tidak ditemukan. Periksa konfigurasi worker.';
-        } else if (response.status === 500) {
-          errorMessage = 'Terjadi kesalahan di server upload. Coba lagi nanti.';
-        } else if (response.status === 0) {
-          errorMessage = 'Tidak dapat terhubung ke server upload. Periksa koneksi internet.';
-        }
+          // Provide specific error messages for common issues
+          if (response.status === 404) {
+            errorMessage = 'Worker endpoint tidak ditemukan. Periksa konfigurasi worker.';
+          } else if (response.status === 500) {
+            errorMessage = 'Terjadi kesalahan di server upload. Coba lagi nanti.';
+          } else if (response.status === 0) {
+            errorMessage = 'Tidak dapat terhubung ke server upload. Periksa koneksi internet.';
+          }
 
-        // Don't retry for client errors (4xx)
-        if (response.status >= 400 && response.status < 500) {
+          // Don't retry for client errors (4xx)
+          if (response.status >= 400 && response.status < 500) {
+            throw new Error(errorMessage);
+          }
+
+          // Retry for server errors (5xx) or network errors
+          if (retryCount < maxRetries) {
+            console.log(`Upload failed, retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            return uploadFile(file, retryCount + 1);
+          }
+
           throw new Error(errorMessage);
         }
 
-        // Retry for server errors (5xx) or network errors
-        if (retryCount < maxRetries) {
-          console.log(`Upload failed, retrying in ${retryDelay}ms (attempt ${retryCount + 1}/${maxRetries})`);
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
-          return uploadFile(file, retryCount + 1);
+        const result = await response.json();
+        console.log('Worker result:', result);
+
+        if (!result.success || !result.url) {
+          throw new Error(result.error || 'No image URL returned from worker');
         }
 
-        throw new Error(errorMessage);
+        // Return the full URL from worker
+        const imageUrl = result.url;
+        console.log('Image URL from worker:', imageUrl);
+
+        return imageUrl;
+      } catch (workerError) {
+        // Worker failed - fallback to data URL
+        console.error('Worker upload failed, falling back to data URL:', workerError);
+        
+        // Use data URL as fallback
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            console.log('Data URL generated successfully');
+            resolve(reader.result as string);
+          };
+          reader.onerror = () => {
+            console.error('Failed to generate data URL');
+            reject(new Error('Failed to generate data URL'));
+          };
+          reader.readAsDataURL(webpFile);
+        });
       }
-
-      const result = await response.json();
-      console.log('Worker result:', result);
-
-      if (!result.success || !result.url) {
-        throw new Error(result.error || 'No image URL returned from worker');
-      }
-
-      // Return the full URL from worker
-      const imageUrl = result.url;
-      console.log('WebP Image URL from worker:', imageUrl);
-
-      return imageUrl;
     } catch (error) {
       // Handle timeout errors
       if (error instanceof Error && error.name === 'TimeoutError') {
