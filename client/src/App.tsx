@@ -11,6 +11,7 @@ import { OrganizationSchemaMarkup } from "@/components/SchemaMarkup";
 import { useCoreWebVitals } from "@/hooks/use-core-web-vitals";
 import { Footer } from "@/components/Footer";
 import { logger } from "@/lib/logger";
+import { trackPageView, initMetaPixel } from "@/lib/metaPixel";
 
 // Lazy load pages for better performance
 const NotFound = lazy(() => import("@/pages/not-found"));
@@ -730,6 +731,17 @@ function Router() {
 function App() {
   // Track Core Web Vitals for performance monitoring
   // useCoreWebVitals(); // Temporarily disabled due to hook context issue
+
+  // Initialize Meta Pixel and track page view on app load
+  useEffect(() => {
+    // Initialize Meta Pixel tracking
+    initMetaPixel();
+    
+    // Track initial page view (both Pixel and CAPI)
+    trackPageView();
+    
+    console.log('Meta Pixel + CAPI initialized and PageView tracked');
+  }, []);
 
   return (
     <ErrorBoundary

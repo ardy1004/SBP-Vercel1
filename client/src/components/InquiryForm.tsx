@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { Property } from "@shared/types";
+import { trackQualifiedLead } from "@/lib/metaPixel";
 
 interface InquiryFormProps {
   propertyId: string;
@@ -360,6 +361,15 @@ export function InquiryForm({ propertyId, property }: InquiryFormProps) {
               target="_blank"
               rel="noopener noreferrer"
               className="block"
+              onClick={() => {
+                // Track QualifiedLead when user clicks WhatsApp button
+                const propertyValue = property?.hargaProperti ? Number(property.hargaProperti) : undefined;
+                const contentName = property?.judulProperti || property?.jenisProperti;
+                trackQualifiedLead({
+                  value: propertyValue,
+                  contentName: contentName,
+                });
+              }}
             >
               <Button
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-200 hover:shadow-lg"

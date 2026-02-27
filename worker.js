@@ -389,6 +389,11 @@ export default {
 				)
 			}
 
+			// Handle Meta Conversions API (CAPI)
+			if (request.method === 'POST' && url.pathname === '/api/meta-capi') {
+				return handleMetaCAPI(request, env);
+			}
+
 			// Handle AI content generation (Ollama/Local AI)
 			if (request.method === 'POST' && url.pathname === '/api/ai/generate-description') {
 				return withPerformanceMonitoring(
@@ -3538,6 +3543,114 @@ async function handleGetLeads(request, env) {
 				'Access-Control-Allow-Methods': 'GET, OPTIONS',
 				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 			},
+		});
+	}
+}
+
+// Handle Meta Conversions API (CAPI)
+async function handleMetaCAPI(request, env) {
+	// CORS handling
+	if (request.method === 'OPTIONS') {
+		return new Response(null, {
+			headers: {
+				...getCORSHeaders(request),
+				'Access-Control-Allow-Methods': 'POST, OPTIONS',
+				'Access-Control-Allow-Headers': 'Content-Type',
+			},
+		});
+	}
+
+	if (request.method !== 'POST') {
+		return new Response('Method not allowed', { status: 405 });
+	}
+
+	try {
+		const { event_name, event_id, event_time, custom_data, user_data } = await request.json();
+
+		// Validate required fields
+		if (!event_name) {
+			return new Response(JSON.stringify({ error: 'event_name is required' }), {
+				status: 400,
+				headers: { 'Content-Type': 'application/json', ...getCORSHeaders(request) },
+			});
+		}
+
+		// Get access token from environment variable
+		const accessToken = env.META_CAPI_TOKEN;
+		if (!accessToken) {
+			console.error('META_CAPI_TOKEN is not configured');
+			return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+				status: 500,
+				headers: { 'Content-Type': 'application/json', ...getCORSHeaders(request) },
+			});
+		}
+
+		// Get Pixel ID
+		const pixelId = '1749426109369910';
+
+		// Prepare the event payload
+		const capiEvent = {
+			event_name,
+			event_id,
+			event_time: event_time || Math.floor(Date.now() / 1000),
+			action_source: 'website',
+			user_data: {
+				client_ip_address: request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '',
+				client_user_agent: request.headers.get('User-Agent') || '',
+				...user_data,
+			},
+			custom_data,
+		};
+
+		// Send to Meta Conversions API
+		const metaApiUrl = `https://graph.facebook.com/v18.0/${pixelId}/events`;
+
+		const metaResponse = await fetch(metaApiUrl, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				data: [capiEvent],
+				access_token: accessToken,
+			}),
+		});
+
+		const metaResult = await metaResponse.json();
+
+		if (!metaResponse.ok) {
+			console.error('Meta CAPI error:', metaResult);
+			return new Response(JSON.stringify({
+				error: 'Failed to send event to Meta',
+				details: metaResult,
+			}), {
+				status: metaResponse.status,
+				headers: { 'Content-Type': 'application/json', ...getCORSHeaders(request) },
+			});
+		}
+
+		console.log('Meta CAPI event sent successfully:', {
+			event_name,
+			event_id,
+			timestamp: new Date().toISOString(),
+		});
+
+		return new Response(JSON.stringify({
+			success: true,
+			event_name,
+			event_id,
+			fb_response: metaResult,
+		}), {
+			headers: { 'Content-Type': 'application/json', ...getCORSHeaders(request) },
+		});
+	} catch (error) {
+		console.error('Error in Meta CAPI handler:', error);
+		return new Response(JSON.stringify({
+			error: 'Internal server error',
+			message: error.message,
+		}), {
+			status: 500,
+			headers: { 'Content-Type': 'application/json', ...getCORSHeaders(request) },
 		});
 	}
 }

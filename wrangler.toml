@@ -18,6 +18,7 @@ SEARCH_CONSOLE_SITE_URL = "https://salambumi.xyz"
 # wrangler secret put PAGESPEED_API_KEY
 # wrangler secret put CF_IMAGES_TOKEN
 # wrangler secret put CF_ACCOUNT_ID
+# wrangler secret put META_CAPI_TOKEN
 
 # R2 Bucket binding for image storage
 [[r2_buckets]]
