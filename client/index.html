@@ -16,7 +16,7 @@
       gtag('config', 'G-M4YC1Z6VNC');
     </script>
 
-    <!-- Meta Pixel Code - Pixel 1 -->
+    <!-- Meta Pixel Code - Using BOTH active Pixel IDs -->
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -26,8 +26,10 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '1195412375706626');
-    fbq('init', '1247267380571403');
+    
+    // Initialize both active pixels
+    fbq('init', '1195412375706626', {}, { enableElq: false });
+    fbq('init', '1247267380571403', {}, { enableElq: false });
     fbq('track', 'PageView');
     </script>
     <meta name="description" content="Discover premium properties in Indonesia with Salam Bumi Property. Search apartments, houses, villas, warehouses, and commercial properties for sale or rent across Jakarta, Bandung, and major cities." />
@@ -42,7 +44,7 @@
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       img-src 'self' data: https: blob:;
       font-src 'self' https://fonts.gstatic.com;
-      connect-src 'self' https://*.supabase.co https://*.cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://mpc-prod-27-s6uit34pua-uk.a.run.app https://demo-1.conversionsapigateway.com https://sbp-upload-worker.salambumiproperty-f1b.workers.dev https://*.workers.dev https://www.facebook.com;
+      connect-src 'self' https://*.supabase.co https://*.cloudflareinsights.com https://www.google-analytics.com https://analytics.google.com https://sbp-upload-worker.salambumiproperty-f1b.workers.dev https://*.workers.dev https://www.facebook.com;
       frame-src 'self' https://www.youtube.com https://www.google.com;
       worker-src 'self' blob:;
       object-src 'none';
@@ -59,7 +61,7 @@
   <body>
     <!-- Google Tag Manager (noscript) - REMOVED -->
 
-    <!-- Meta Pixel noscript fallback -->
+    <!-- Meta Pixel noscript fallback - Both active Pixel IDs -->
     <noscript>
       <img height="1" width="1" style="display:none"
            src="https://www.facebook.com/tr?id=1195412375706626&ev=PageView&noscript=1"/>
