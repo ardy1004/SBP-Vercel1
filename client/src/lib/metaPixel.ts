@@ -45,6 +45,8 @@ export async function sendToCapi(
       fbp?: string;
       email?: string;
       phone?: string;
+      first_name?: string;
+      last_name?: string;
     };
   } = {}
 ): Promise<boolean> {
@@ -112,6 +114,10 @@ export function trackViewContent(params: {
   const eventId = generateEventId();
   const { contentId, contentName, contentType = 'real_estate', value, currency = 'IDR' } = params;
 
+  // Get FBP and FBC for CAPI
+  const fbp = getFBP();
+  const fbc = getFBC();
+
   // Browser-side: Fire Pixel
   firePixel('ViewContent', {
     content_ids: contentId ? [contentId] : undefined,
@@ -131,6 +137,7 @@ export function trackViewContent(params: {
       value: value,
       currency: currency,
     },
+    userData: { fbp, fbc },
   });
 
   console.log('ViewContent tracked:', { eventId, contentId, contentName });
@@ -144,12 +151,17 @@ export function trackViewContent(params: {
 export function trackPageView(): string {
   const eventId = generateEventId();
 
+  // Get FBP and FBC for CAPI
+  const fbp = getFBP();
+  const fbc = getFBC();
+
   // Browser-side: Fire Pixel
   firePixel('PageView', {}, { eventId });
 
   // Server-side: Send to CAPI
   sendToCapi('PageView', {
     eventId,
+    userData: { fbp, fbc },
   });
 
   console.log('PageView tracked:', { eventId });
@@ -165,9 +177,17 @@ export function trackQualifiedLead(params: {
   currency?: string | undefined;
   contentName?: string | undefined;
   leadId?: string | undefined;
+  email?: string;
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
 } = {}): string {
   const eventId = generateEventId();
-  const { value, currency = 'IDR', contentName, leadId } = params;
+  const { value, currency = 'IDR', contentName, leadId, email, phone, firstName, lastName } = params;
+
+  // Get FBP and FBC for CAPI
+  const fbp = getFBP();
+  const fbc = getFBC();
 
   // Browser-side: Fire Pixel
   firePixel('QualifiedLead', {
@@ -186,6 +206,7 @@ export function trackQualifiedLead(params: {
       content_name: contentName,
       lead_id: leadId,
     },
+    userData: { fbp, fbc, email, phone, first_name: firstName, last_name: lastName },
   });
 
   console.log('QualifiedLead tracked:', { eventId, value, contentName });
@@ -198,9 +219,15 @@ export function trackQualifiedLead(params: {
 export function trackLead(params: {
   value?: number | undefined;
   currency?: string | undefined;
+  email?: string;
+  phone?: string;
 } = {}): string {
   const eventId = generateEventId();
-  const { value, currency = 'IDR' } = params;
+  const { value, currency = 'IDR', email, phone } = params;
+
+  // Get FBP and FBC for CAPI
+  const fbp = getFBP();
+  const fbc = getFBC();
 
   // Browser-side: Fire Pixel
   firePixel('Lead', {
@@ -215,6 +242,7 @@ export function trackLead(params: {
       value: value,
       currency: currency,
     },
+    userData: { fbp, fbc, email, phone },
   });
 
   console.log('Lead tracked:', { eventId, value });
@@ -226,9 +254,15 @@ export function trackLead(params: {
  */
 export function trackContact(params: {
   contentName?: string | undefined;
+  email?: string;
+  phone?: string;
 } = {}): string {
   const eventId = generateEventId();
-  const { contentName } = params;
+  const { contentName, email, phone } = params;
+
+  // Get FBP and FBC for CAPI
+  const fbp = getFBP();
+  const fbc = getFBC();
 
   // Browser-side: Fire Pixel
   firePixel('Contact', {
@@ -241,6 +275,7 @@ export function trackContact(params: {
     customData: {
       content_name: contentName,
     },
+    userData: { fbp, fbc, email, phone },
   });
 
   console.log('Contact tracked:', { eventId, contentName });

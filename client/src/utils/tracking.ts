@@ -1,4 +1,6 @@
 // Google Analytics 4 Tracking
+import { trackContact, trackLead, generateEventId, getFBP, getFBC } from '@/lib/metaPixel';
+
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
@@ -118,12 +120,23 @@ export const metaPixel = {
 
 // Combined tracking for WhatsApp clicks
 export const trackWhatsAppConversion = (source: string = 'landing_page') => {
-  // Track both GA4 and Meta Pixel
+  // Generate unique event ID for deduplication
+  const eventId = generateEventId();
+  const fbp = getFBP();
+  const fbc = getFBC();
+  
+  // Track GA4
   ga4.trackWhatsAppClick(source);
+  
+  // Track browser-side Meta Pixel
   metaPixel.trackWhatsAppClick();
-
+  
+  // Track server-side CAPI (both Contact and Lead events)
+  trackContact({ contentName: source });
+  trackLead({});
+  
   // Log for debugging
-  console.log('WhatsApp conversion tracked:', { source, timestamp: new Date().toISOString() });
+  console.log('WhatsApp conversion tracked:', { source, eventId, timestamp: new Date().toISOString() });
 };
 
 // Utility to check if tracking is available
