@@ -19,7 +19,7 @@ export const GA4_CONFIG = {
 };
 
 export const META_PIXEL_CONFIG = {
-  pixelId: '1247267380571403',
+  pixelId: '765761826603843',
   events: {
     on_page_load: 'PageView',
     on_featured_properties_visible: {
@@ -142,7 +142,7 @@ export const initTracking = () => {
     // Meta Pixel - Already initialized globally in index.html
     // DO NOT call metaPixel.init() here as it causes duplicate initialization
     // The Meta Pixel script in index.html already handles:
-    // - fbq('init', '1247267380571403')
+    // - fbq('init', '765761826603843')
     // - fbq('track', 'PageView')
   }
 };

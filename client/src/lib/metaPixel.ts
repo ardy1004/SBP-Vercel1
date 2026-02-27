@@ -15,7 +15,7 @@ declare global {
 }
 
 // Meta Pixel ID - matches active pixel in Meta Events Manager
-const META_PIXEL_ID = '1195412375706626';
+const META_PIXEL_ID = '765761826603843';
 
 /**
  * Generate a unique event ID for deduplication between Pixel and CAPI
