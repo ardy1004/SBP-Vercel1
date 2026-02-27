@@ -386,14 +386,14 @@ export function MarketingAgreementForm({
                     <div key={option.id}>
                       <div className={`
                         flex items-start gap-3 p-4 rounded-lg border-2
-                        ${formData[`${option.id}_enabled` as keyof formData] 
+                        ${(formData as any)[`${option.id}_enabled`] 
                           ? 'border-primary bg-primary/5' 
                           : 'border-gray-200'
                         }
                       `}>
                         <Checkbox
                           id={option.id}
-                          checked={formData[`${option.id}_enabled` as keyof formData] as boolean}
+                          checked={(formData as any)[`${option.id}_enabled`] as boolean}
                           onCheckedChange={(checked) => handleMarketingOptionChange(option.id, checked as boolean)}
                           disabled={isReadOnly}
                         />
@@ -406,7 +406,7 @@ export function MarketingAgreementForm({
                       </div>
 
                       {/* Marketing Option Details */}
-                      {formData[`${option.id}_enabled` as keyof formData] && (
+                      {(formData as any)[`${option.id}_enabled`] && (
                         <div className="ml-8 mt-2 p-3 bg-gray-50 rounded-lg space-y-2">
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -419,7 +419,7 @@ export function MarketingAgreementForm({
                               <Label className="text-xs">Budget Ads Harian</Label>
                               <Input
                                 type="number"
-                                value={formData[`${option.id}_budget_daily` as keyof formData] as number}
+                                value={(formData as any)[`${option.id}_budget_daily`] as number}
                                 onChange={(e) => handleChange(`${option.id}_budget_daily`, parseInt(e.target.value))}
                                 disabled={isReadOnly}
                                 className="h-8"
